@@ -79,10 +79,10 @@ const SERVICES: ServiceInfo[] = [
   {
     id: "seminarios",
     title: "Seminarios Fin de semana",
-    description: "Inmersión total en el campo de trabajo.",
-    longDescription: "Dos jornadas de trabajo intensivo en nuestras instalaciones. Enfocados en la resolución de bloqueos específicos y la armonía entre el perro, el guía y el ganado. Una experiencia de convivencia y aprendizaje técnico de alto impacto.",
-    image: "https://picsum.photos/seed/seminar/800/450",
-    features: ["Práctica real con rebaño", "Grupos reducidos", "Evaluación de instinto", "Comida social y networking"]
+    description: "Evolución y convivencia técnica, en casa o en ruta.",
+    longDescription: "Dos jornadas de trabajo intensivo en nuestras instalaciones o fuera de ellas (Consultar disponibilidad). Enfocadas en la evolución tanto de perros como de guías. Una experiencia de convivencia y aprendizaje técnico de alto impacto.",
+    image: `${import.meta.env.BASE_URL}seminarios.png`,
+    features: ["Práctica real con rebaño", "Grupos reducidos", "Evaluación de instinto", "Planteamientos de trabajos futuros."]
   },
   {
     id: "webminar",
@@ -313,7 +313,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.1.1</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.1.4</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
