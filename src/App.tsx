@@ -41,7 +41,7 @@ interface AlumnoData {
   message?: string;
 }
 
-type ViewState = "landing" | "login" | "dashboard";
+type ViewState = "landing" | "login" | "dashboard" | "teacher";
 
 // --- Constants ---
 
@@ -49,6 +49,14 @@ type ViewState = "landing" | "login" | "dashboard";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB27KkQ4T5_Y9u-1pJxd7vrFxsBxz68QBEswYiaygkFoDuOxIgAyAYfjuTBdxF8asDug/exec";
 const LOGIN_SCRIPT_URL = SCRIPT_URL;
 const DATA_SCRIPT_URL = SCRIPT_URL;
+
+const CLASS_TYPES = [
+  "Clases-Online",
+  "Seminarios Fin de semana",
+  "Webminar",
+  "Acceso a material temático exclusivo alumnos",
+  "Curso Intensivo cuatrimestral"
+];
 
 // --- Utils ---
 
@@ -88,7 +96,11 @@ export default function App() {
   const handleLoginSuccess = (data: AlumnoData) => {
     setUser(data);
     sessionStorage.setItem("alumnoData", JSON.stringify(data));
-    setView("dashboard");
+    if (data.user === "GALPA") {
+      setView("teacher");
+    } else {
+      setView("dashboard");
+    }
   };
 
   const handleLogout = () => {
@@ -222,13 +234,16 @@ export default function App() {
           {view === "dashboard" && user && (
             <DashboardView user={user} onLogout={handleLogout} />
           )}
+          {view === "teacher" && user && (
+            <TeacherDashboard onLogout={handleLogout} />
+          )}
         </AnimatePresence>
       </main>
 
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.4</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.7</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -289,19 +304,21 @@ function LandingView({ onStart }: { onStart: () => void }) {
 
         {/* Right Side: Visual / Placeholder */}
         <div className="w-full md:w-2/5 hidden md:flex items-center justify-center relative">
-            <div className="w-full aspect-square border border-white/10 rounded-3xl p-1 relative overflow-hidden">
+            <div className="w-full aspect-square border border-white/10 rounded-3xl p-1 relative overflow-hidden bg-brand-surface group">
                 <img 
-                    src="https://picsum.photos/seed/bordercollie/800/800" 
-                    alt="Pastoreo" 
-                    className="w-full h-full object-cover rounded-[1.2rem] grayscale opacity-40 group-hover:opacity-60 transition-opacity"
+                    src={`${import.meta.env.BASE_URL}Logo.png`}
+                    alt="GALPA Logo" 
+                    className="w-full h-full object-contain p-8 opacity-80 group-hover:opacity-100 transition-all duration-500 hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.src = "https://picsum.photos/seed/bordercollie/800/800";
+                    }}
                     referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-brand-bg/40 mix-blend-multiply"></div>
-                <div className="absolute bottom-6 left-6 flex items-center gap-3">
-                    <div className="w-10 h-10 border border-white/20 rounded-full flex items-center justify-center">
-                        <Video className="w-4 h-4 text-brand-accent" />
+                <div className="absolute bottom-6 left-6 flex items-center gap-3 bg-brand-bg/60 backdrop-blur-sm p-3 rounded-full border border-white/5">
+                    <div className="w-8 h-8 border border-white/20 rounded-full flex items-center justify-center">
+                        <Video className="w-3 h-3 text-brand-accent" />
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest font-black text-white/60">Contenido Exclusivo</span>
+                    <span className="text-[9px] uppercase tracking-widest font-black text-white/60">Contenido Exclusivo</span>
                 </div>
             </div>
         </div>
@@ -322,6 +339,17 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData) => voi
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Créditos de profesor directos
+    if (user === "GALPA" && pass === "@Joker2026") {
+      onSuccess({
+        success: true,
+        user: "INST. GALPA",
+        classes: []
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(`${LOGIN_SCRIPT_URL}?user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`, {
@@ -419,6 +447,140 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData) => voi
               <a href="#" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-brand-accent transition-colors">Solicitar Registro</a>
           </div>
         </form>
+      </div>
+    </motion.div>
+  );
+}
+
+// --- View: Teacher Dashboard ---
+
+function TeacherDashboard({ onLogout }: { onLogout: () => void }) {
+  const [selectedType, setSelectedType] = useState(CLASS_TYPES[0]);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch(`${LOGIN_SCRIPT_URL}?action=getAllData&user=GALPA&pass=@Joker2026`);
+        const data = await response.json();
+        if (data.success) {
+          setAllStudents(data.students || []);
+        }
+      } catch (err) {
+        console.error("Error fetching students:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, []);
+
+  const filteredStudents = allStudents.filter(student => {
+    // Si el alumno tiene alguna clase del tipo seleccionado
+    return student.classes.some((c: any) => c.tipo === selectedType);
+  });
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex-1 flex flex-col bg-brand-bg"
+    >
+      {/* Header Panel */}
+      <div className="px-12 py-16 border-b border-white/5 bg-brand-forest/5 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
+          <div className="space-y-4">
+            <h1 className="text-5xl font-light tracking-tighter leading-none">
+                Panel de <span className="serif text-brand-accent">Gestión Académica</span>
+            </h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">
+              Instructor Principal GALPA
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap gap-3 justify-center md:justify-end">
+            {CLASS_TYPES.map(type => (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                className={`px-4 py-2 rounded-full text-[9px] uppercase tracking-widest font-bold border transition-all ${
+                  selectedType === type 
+                  ? "bg-brand-accent border-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" 
+                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/30"
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 max-w-7xl mx-auto px-12 py-16 w-full">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-40 gap-4">
+            <div className="w-12 h-12 border-2 border-brand-accent/30 border-t-brand-accent rounded-full animate-spin"></div>
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-accent/60">Cargando base de datos...</span>
+          </div>
+        ) : (
+          <div className="space-y-12">
+            <div className="flex items-center justify-between border-b border-white/5 pb-6">
+               <h2 className="text-xl font-light tracking-tight flex items-center gap-3">
+                 <Users className="w-5 h-5 text-brand-accent" />
+                 Alumnos en <span className="text-brand-accent italic serif">{selectedType}</span>
+               </h2>
+               <span className="text-[10px] uppercase tracking-widest font-bold text-white/20">
+                 {filteredStudents.length} Alumno{filteredStudents.length !== 1 ? 's' : ''} encontrado{filteredStudents.length !== 1 ? 's' : ''}
+               </span>
+            </div>
+
+            {filteredStudents.length === 0 ? (
+              <div className="py-20 text-center border border-dashed border-white/10 rounded-2xl">
+                 <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-30">No hay alumnos registrados en esta categoría</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredStudents.map((student, idx) => (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-brand-surface border border-white/5 p-8 rounded-xl hover:border-brand-accent/20 transition-all group cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="w-12 h-12 bg-brand-bg rounded-lg border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Users className="w-5 h-5 text-brand-accent/60" />
+                      </div>
+                      <div className="text-right">
+                        <span className="block text-[8px] uppercase tracking-widest font-black text-white/20">Clases Totales</span>
+                        <span className="text-xl font-light text-brand-accent">{student.classes.length}</span>
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors">{student.user}</h3>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-white/30 mb-6">Alumno Galpa Campus</p>
+                    
+                    <div className="space-y-4 border-t border-white/5 pt-6">
+                       {student.classes.filter((c: any) => c.tipo === selectedType).slice(0, 2).map((c: any, cIdx: number) => (
+                         <div key={cIdx} className="flex items-center gap-3">
+                            <Play className="w-2 h-2 text-brand-accent" />
+                            <span className="text-[9px] uppercase tracking-widest font-medium text-white/50 truncate">{c.titulo}</span>
+                         </div>
+                       ))}
+                       {student.classes.filter((c: any) => c.tipo === selectedType).length > 2 && (
+                         <p className="text-[8px] uppercase tracking-widest font-bold text-brand-accent/40 italic">
+                            + {student.classes.filter((c: any) => c.tipo === selectedType).length - 2} clases más en esta categoría
+                         </p>
+                       )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );
