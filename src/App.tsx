@@ -120,7 +120,7 @@ export default function App() {
                   <div className="w-3 h-3 border border-brand-bg rotate-45"></div>
                 </div>
               </div>
-              <span className="text-xs tracking-[0.3em] font-bold uppercase transition-colors group-hover:text-brand-accent">GALPA</span>
+              <span className="text-xs tracking-[0.3em] font-bold uppercase transition-colors group-hover:text-brand-accent">Galpa Sheepdog Campus</span>
             </div>
 
             {/* Desktop Nav */}
@@ -226,7 +226,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026</span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.1</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -500,10 +500,10 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
     try {
       const params = new URLSearchParams();
       params.append('action', 'updateAlumnoNotas');
-      params.append('user', userName);
-      params.append('fecha', clase.fecha);
-      params.append('titulo', clase.titulo);
-      params.append('notasAlumno', comment);
+      params.append('user', String(userName).trim());
+      params.append('fecha', String(clase.fecha).trim());
+      params.append('titulo', String(clase.titulo).trim());
+      params.append('notasAlumno', comment.trim());
 
       await fetch(DATA_SCRIPT_URL, {
         method: 'POST',
