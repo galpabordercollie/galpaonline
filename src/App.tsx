@@ -45,8 +45,10 @@ type ViewState = "landing" | "login" | "dashboard";
 
 // --- Constants ---
 
-const LOGIN_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB27KkQ4T5_Y9u-1pJxd7vrFxsBxz68QBEswYiaygkFoDuOxIgAyAYfjuTBdxF8asDug/exec";
-const DATA_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNCBM7RpjnNCoDCl9M9Gyrg9pg9z3Oq8S0e0ixxH-wafhpyhtXF876lR_U2G-qF3FAOg/exec";
+// IMPORTANTE: Usa una única URL para todo el script si has usado la versión "Integrada" (v1.5) que te pasé.
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB27KkQ4T5_Y9u-1pJxd7vrFxsBxz68QBEswYiaygkFoDuOxIgAyAYfjuTBdxF8asDug/exec";
+const LOGIN_SCRIPT_URL = SCRIPT_URL;
+const DATA_SCRIPT_URL = SCRIPT_URL;
 
 // --- Utils ---
 
@@ -104,13 +106,12 @@ export default function App() {
               className="flex items-center gap-4 cursor-pointer group" 
               onClick={() => setView("landing")}
             >
-              <div className="h-16 w-auto flex items-center justify-center">
+              <div className="h-12 w-auto flex items-center justify-center">
                 <img 
                   src={`${import.meta.env.BASE_URL}Logo.png`}
                   alt="GALPA Logo" 
                   className="h-full w-auto object-contain"
                   onError={(e) => {
-                    // Fallback to the icon if image fails to load
                     e.currentTarget.style.display = 'none';
                     const parent = e.currentTarget.parentElement;
                     if (parent) parent.classList.add('fallback-active');
@@ -121,7 +122,7 @@ export default function App() {
                   <div className="w-3 h-3 border border-brand-bg rotate-45"></div>
                 </div>
               </div>
-              <span className="text-xs tracking-[0.3em] font-bold uppercase transition-colors group-hover:text-brand-accent">Galpa Sheepdog Campus</span>
+              <span className="text-xs tracking-[0.3em] font-bold uppercase transition-colors group-hover:text-brand-accent whitespace-nowrap">GALPA</span>
             </div>
 
             {/* Desktop Nav */}
@@ -227,7 +228,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.2</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.4</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
