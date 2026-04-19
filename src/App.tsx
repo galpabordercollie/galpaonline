@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "motion/react";
 // --- Types ---
 
 interface ClassItem {
+  id?: number; // Row index from spreadsheet
   fecha: string;
   titulo: string;
   videoUrl: string;
@@ -226,7 +227,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.1</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono opacity-40">v 0.0.2</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -501,8 +502,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
       const params = new URLSearchParams();
       params.append('action', 'updateAlumnoNotas');
       params.append('user', String(userName).trim());
-      params.append('fecha', String(clase.fecha).trim());
-      params.append('titulo', String(clase.titulo).trim());
+      params.append('rowId', String(clase.id)); // Usamos el ID de la fila para precisión total
       params.append('notasAlumno', comment.trim());
 
       await fetch(DATA_SCRIPT_URL, {
