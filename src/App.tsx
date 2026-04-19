@@ -103,15 +103,16 @@ export default function App() {
               className="flex items-center gap-4 cursor-pointer group" 
               onClick={() => setView("landing")}
             >
-              <div className="h-12 w-auto flex items-center justify-center">
+              <div className="h-16 w-auto flex items-center justify-center">
                 <img 
-                  src={`${import.meta.env.BASE_URL}Logo.gif`}
+                  src={`${import.meta.env.BASE_URL}Logo.png`}
                   alt="GALPA Logo" 
                   className="h-full w-auto object-contain"
                   onError={(e) => {
                     // Fallback to the icon if image fails to load
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement?.classList.add('fallback-active');
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) parent.classList.add('fallback-active');
                   }}
                   referrerPolicy="no-referrer"
                 />
