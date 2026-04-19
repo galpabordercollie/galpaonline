@@ -73,7 +73,7 @@ const SERVICES: ServiceInfo[] = [
     title: "Clases-Online",
     description: "Análisis técnico de precisión desde cualquier lugar.",
     longDescription: "Nuestro sistema de formación digital te permite recibir correcciones técnicas en tiempo real. Analizamos tus vídeos, corregimos posiciones y trazamos líneas de trabajo personalizadas sin necesidad de desplazamiento. La tecnología al servicio de la tradición.",
-    image: "https://picsum.photos/seed/online/800/450",
+    image: `${import.meta.env.BASE_URL}online.png`,
     features: ["Video-análisis en directo", "Sesiones personalizadas", "Grabación de la sesión para repaso", "Plan de trabajo mensual"]
   },
   {
@@ -313,7 +313,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.0.9</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.1.1</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -369,19 +369,19 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
         <div className="w-full md:w-2/5 hidden md:flex items-center justify-center relative">
             <div className="w-full aspect-square border border-white/10 rounded-3xl p-1 relative overflow-hidden bg-brand-surface group">
                 <img 
-                    src={`${import.meta.env.BASE_URL}Logo.png`}
-                    alt="GALPA Logo" 
-                    className="w-full h-full object-contain p-8 opacity-80 group-hover:opacity-100 transition-all duration-500 hover:scale-105"
+                    src={`${import.meta.env.BASE_URL}Hero.jpg`}
+                    alt="GALPA Hero" 
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 hover:scale-105"
                     onError={(e) => {
                       e.currentTarget.src = "https://picsum.photos/seed/bordercollie/800/800";
                     }}
                     referrerPolicy="no-referrer"
                 />
-                <div className="absolute bottom-6 left-6 flex items-center gap-3 bg-brand-bg/60 backdrop-blur-sm p-3 rounded-full border border-white/5">
-                    <div className="w-8 h-8 border border-white/20 rounded-full flex items-center justify-center">
+                <div className="absolute bottom-6 left-6 flex items-center gap-3 bg-brand-bg/60 backdrop-blur-sm p-3 rounded-full border border-white/5 shadow-2xl">
+                    <div className="w-8 h-8 bg-brand-accent/20 rounded-full flex items-center justify-center">
                         <Video className="w-3 h-3 text-brand-accent" />
                     </div>
-                    <span className="text-[9px] uppercase tracking-widest font-black text-white/60">Contenido Exclusivo</span>
+                    <span className="text-[9px] uppercase tracking-widest font-black text-white/80">Contenido Exclusivo</span>
                 </div>
             </div>
         </div>
