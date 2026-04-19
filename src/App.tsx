@@ -41,7 +41,16 @@ interface AlumnoData {
   message?: string;
 }
 
-type ViewState = "landing" | "login" | "dashboard" | "teacher";
+type ViewState = "landing" | "login" | "dashboard" | "teacher" | "service-detail";
+
+interface ServiceInfo {
+  id: string;
+  title: string;
+  description: string;
+  longDescription: string;
+  image: string;
+  features: string[];
+}
 
 // --- Constants ---
 
@@ -56,6 +65,49 @@ const CLASS_TYPES = [
   "Webminar",
   "Acceso a material temático exclusivo alumnos",
   "Curso Intensivo cuatrimestral"
+];
+
+const SERVICES: ServiceInfo[] = [
+  {
+    id: "clases-online",
+    title: "Clases-Online",
+    description: "Análisis técnico de precisión desde cualquier lugar.",
+    longDescription: "Nuestro sistema de formación digital te permite recibir correcciones técnicas en tiempo real. Analizamos tus vídeos, corregimos posiciones y trazamos líneas de trabajo personalizadas sin necesidad de desplazamiento. La tecnología al servicio de la tradición.",
+    image: "https://picsum.photos/seed/online/800/450",
+    features: ["Video-análisis en directo", "Sesiones personalizadas", "Grabación de la sesión para repaso", "Plan de trabajo mensual"]
+  },
+  {
+    id: "seminarios",
+    title: "Seminarios Fin de semana",
+    description: "Inmersión total en el campo de trabajo.",
+    longDescription: "Dos jornadas de trabajo intensivo en nuestras instalaciones. Enfocados en la resolución de bloqueos específicos y la armonía entre el perro, el guía y el ganado. Una experiencia de convivencia y aprendizaje técnico de alto impacto.",
+    image: "https://picsum.photos/seed/seminar/800/450",
+    features: ["Práctica real con rebaño", "Grupos reducidos", "Evaluación de instinto", "Comida social y networking"]
+  },
+  {
+    id: "webminar",
+    title: "Webminar",
+    description: "Conocimiento táctico y teoría aplicada.",
+    longDescription: "Sesiones temáticas sobre psicología canina aplicada al pastoreo, gestión de rebaños y tácticas de concurso. La base teórica necesaria para entender el 'por qué' de cada movimiento en el campo.",
+    image: "https://picsum.photos/seed/webinar/800/450",
+    features: ["Ponencias de expertos", "Ronda de preguntas y respuestas", "Material de apoyo descargable", "Acceso a la grabación"]
+  },
+  {
+    id: "material-exclusivo",
+    title: "Acceso a material exclusivo",
+    description: "Tu biblioteca técnica de referencia.",
+    longDescription: "Acceso ilimitado a nuestra videoteca premium. Incluye tutoriales paso a paso, análisis de recorridos internacionales y esquemas tácticos que no encontrarás en ningún otro lugar.",
+    image: "https://picsum.photos/seed/library/800/450",
+    features: ["Tutoriales HD", "Esquemas de maniobras", "Análisis de competiciones", "Actualizaciones semanales"]
+  },
+  {
+    id: "intensivo",
+    title: "Curso Intensivo cuatrimestral",
+    description: "La corona del aprendizaje en GALPA.",
+    longDescription: "Un programa estructurado para aquellos que buscan la maestría. Cuatro meses de seguimiento riguroso, objetivos por etapas y monitorización constante del progreso del binomio guía-perro.",
+    image: "https://picsum.photos/seed/intensive/800/450",
+    features: ["Módulos teóricos y prácticos", "Examen de nivel por etapa", "Certificado de aprovechamiento", "Seguimiento prioritario"]
+  }
 ];
 
 // --- Utils ---
@@ -77,6 +129,7 @@ const formatDate = (dateString: string) => {
 
 export default function App() {
   const [view, setView] = useState<ViewState>("landing");
+  const [selectedService, setSelectedService] = useState<ServiceInfo | null>(null);
   const [user, setUser] = useState<AlumnoData | null>(null);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
@@ -107,6 +160,12 @@ export default function App() {
     sessionStorage.removeItem("alumnoData");
     setUser(null);
     setView("landing");
+  };
+
+  const openService = (service: ServiceInfo) => {
+    setSelectedService(service);
+    setView("service-detail");
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -224,7 +283,18 @@ export default function App() {
         )}
 
         <AnimatePresence mode="wait">
-          {view === "landing" && <LandingView onStart={() => setView("login")} />}
+          {view === "landing" && (
+            <LandingView 
+              onStart={() => setView("login")} 
+              onServiceClick={openService}
+            />
+          )}
+          {view === "service-detail" && selectedService && (
+            <ServiceDetailView 
+              service={selectedService} 
+              onBack={() => setView("landing")} 
+            />
+          )}
           {view === "login" && (
             <LoginView 
               onSuccess={handleLoginSuccess} 
@@ -243,7 +313,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.0.8</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.0.9</span></span>
           <span className="text-white/5 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -258,51 +328,44 @@ export default function App() {
 
 // --- View: Landing ---
 
-function LandingView({ onStart }: { onStart: () => void }) {
+function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServiceClick: (s: ServiceInfo) => void }) {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex-1 flex flex-col px-12 py-10 gap-20 relative z-10"
+      className="flex-1 flex flex-col px-12 py-10 gap-32 relative z-10"
     >
-      <div className="flex flex-col md:flex-row gap-20 flex-1">
+      <div className="flex flex-col md:flex-row gap-20">
         {/* Left Side: Content */}
         <div className="w-full md:w-3/5 flex flex-col justify-center gap-10">
-          <div>
-            <p className="text-brand-accent text-xs font-bold uppercase tracking-[0.4em] mb-6">Formación de Élite</p>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <p className="text-brand-accent text-xs font-bold uppercase tracking-[0.4em] mb-6">Excelencia en Pastoreo</p>
             <h1 className="text-6xl md:text-8xl font-light leading-[1] mb-8 tracking-tighter">
-              Sheepdog <br/>
-              <span className="serif text-brand-accent">Training Campus</span>
+              Formación de <br/>
+              <span className="serif text-brand-accent italic">Alto Rendimiento</span>
             </h1>
             <p className="text-lg text-white/50 max-w-lg leading-relaxed font-light">
-              Bienvenido al campo virtual de GALPA. Un espacio diseñado para la excelencia en el manejo de pastoreo, integrando técnicas tradicionales con análisis digital avanzado.
+              Donde la tradición se encuentra con la precisión digital. En GALPA, diseñamos programas exclusivos para binomios que buscan el máximo nivel técnico.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl">
-            <div className="p-8 border border-white/5 bg-white/[0.02] rounded-xl group hover:border-brand-accent/20 transition-colors">
-              <span className="block text-brand-accent text-xs font-bold uppercase tracking-widest mb-3">01. Gestión</span>
-              <p className="text-xs text-white/40 leading-relaxed uppercase tracking-widest font-medium">Seguimiento personalizado de alumnos y progreso técnico en tiempo real.</p>
-            </div>
-            <div className="p-8 border border-white/5 bg-white/[0.02] rounded-xl group hover:border-brand-accent/20 transition-colors">
-              <span className="block text-brand-accent text-xs font-bold uppercase tracking-widest mb-3">02. Recursos</span>
-              <p className="text-xs text-white/40 leading-relaxed uppercase tracking-widest font-medium">Librería exclusiva de vídeos, esquemas de campo y tutoriales tácticos.</p>
-            </div>
-          </div>
+          </motion.div>
 
           <div className="pt-4">
              <button 
                 onClick={onStart}
                 className="group relative bg-brand-accent hover:bg-brand-accent-hover text-brand-bg px-10 py-5 rounded-lg font-bold text-xs uppercase tracking-[0.2em] transition-all overflow-hidden flex items-center gap-4 shadow-xl shadow-brand-accent/10"
               >
-                <span>Acceder al Campus</span>
+                <span>Acceso Alumnos</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
           </div>
         </div>
 
-        {/* Right Side: Visual / Placeholder */}
+        {/* Right Side: Visual */}
         <div className="w-full md:w-2/5 hidden md:flex items-center justify-center relative">
             <div className="w-full aspect-square border border-white/10 rounded-3xl p-1 relative overflow-hidden bg-brand-surface group">
                 <img 
@@ -322,6 +385,164 @@ function LandingView({ onStart }: { onStart: () => void }) {
                 </div>
             </div>
         </div>
+      </div>
+
+      {/* Services Section */}
+      <section className="max-w-7xl mx-auto w-full space-y-16">
+        <div className="space-y-4">
+          <h2 className="text-4xl font-light tracking-tight">Nuestra <span className="serif text-brand-accent">Oferta Académica</span></h2>
+          <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] font-bold">Programas de especialización técnica</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {SERVICES.map((service, idx) => (
+            <motion.div
+              key={service.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => onServiceClick(service)}
+              className="group bg-brand-surface border border-white/5 rounded-2xl p-10 flex flex-col gap-8 hover:border-brand-accent/30 transition-all cursor-pointer relative overflow-hidden h-full"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-accent/5 rounded-full blur-2xl translate-x-12 -translate-y-12 group-hover:bg-brand-accent/10 transition-colors"></div>
+              
+              <div className="space-y-4 relative z-10 flex-1">
+                <h3 className="text-2xl font-light tracking-tight leading-tight group-hover:text-brand-accent transition-colors">{service.title}</h3>
+                <p className="text-xs text-white/40 leading-relaxed font-medium uppercase tracking-widest">{service.description}</p>
+              </div>
+
+              <div className="pt-8 border-t border-white/5 flex justify-between items-center relative z-10">
+                <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/20 group-hover:text-brand-accent transition-colors">Explorar Programa</span>
+                <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-brand-accent group-hover:border-brand-accent transition-all">
+                  <ChevronRight className="w-3 h-3 group-hover:text-brand-bg transition-colors" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Methodology Section */}
+      <section id="about" className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-20 items-center py-20">
+         <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-white/10 bg-brand-surface p-1">
+            <img 
+              src="https://picsum.photos/seed/training/1000/750" 
+              alt="Metodología" 
+              className="w-full h-full object-cover rounded-[1.4rem] opacity-30 grayscale saturate-0 hover:grayscale-0 hover:saturate-100 transition-all duration-1000"
+              referrerPolicy="no-referrer"
+            />
+         </div>
+         <div className="space-y-8">
+            <p className="text-brand-accent text-xs font-bold uppercase tracking-[0.4em]">El Método Galpa</p>
+            <h2 className="text-5xl font-light leading-tight tracking-tight">Formación <span className="serif italic text-brand-accent">Sistemática</span></h2>
+            <div className="space-y-6">
+              {[
+                { t: "Análisis Biomecánico", d: "Estudiamos cadencia y ángulos de aproximación del perro." },
+                { t: "Psicología de Rebaño", d: "Entendimiento profundo de la presión y el espacio." },
+                { t: "Estrategia de Concurso", d: "Técnicas de manejo para el más alto nivel competitivo." }
+              ].map((item, i) => (
+                <div key={i} className="flex gap-6">
+                  <div className="text-brand-accent font-mono text-xl opacity-20">{String(i+1).padStart(2,'0')}</div>
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] uppercase tracking-widest font-black text-white/80">{item.t}</h4>
+                    <p className="text-sm text-white/40 leading-relaxed font-light">{item.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+         </div>
+      </section>
+    </motion.div>
+  );
+}
+
+// --- View: Service Detail ---
+
+function ServiceDetailView({ service, onBack }: { service: ServiceInfo; onBack: () => void }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="flex-1 flex flex-col relative z-10"
+    >
+      {/* Hero Section */}
+      <div className="px-12 py-24 border-b border-white/5 bg-brand-forest/5 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-20 items-center justify-between">
+           <div className="space-y-8 max-w-xl">
+             <button 
+                onClick={onBack}
+                className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] font-bold text-white/30 hover:text-brand-accent transition-colors mb-4"
+              >
+                <X className="w-3 h-3" />
+                Volver a la oferta
+              </button>
+             <h1 className="text-6xl md:text-7xl font-light tracking-tighter leading-none">{service.title}</h1>
+             <p className="text-xl text-white/50 leading-relaxed font-light">{service.longDescription}</p>
+           </div>
+           
+           <div className="w-full md:w-1/2 aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative group">
+              <img 
+                src={service.image} 
+                alt={service.title} 
+                className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-brand-accent/5 group-hover:bg-transparent transition-colors"></div>
+           </div>
+        </div>
+      </div>
+
+      {/* Features Grid */}
+      <div className="max-w-7xl mx-auto px-12 py-24 w-full grid grid-cols-1 md:grid-cols-2 gap-24">
+         <div className="space-y-12">
+            <h2 className="text-3xl font-light tracking-tight flex items-center gap-4">
+               <span className="w-12 h-[1px] bg-brand-accent/40"></span>
+               Inclusiones del Programa
+            </h2>
+            <div className="grid grid-cols-1 gap-6">
+               {service.features.map((feature, i) => (
+                 <div key={i} className="flex items-center gap-6 p-6 bg-brand-surface border border-white/5 rounded-xl hover:border-brand-accent/20 transition-all group">
+                    <div className="w-6 h-6 rounded-full border border-brand-accent/40 flex items-center justify-center group-hover:bg-brand-accent group-hover:border-brand-accent transition-all">
+                       <CheckCircle2 className="w-3 h-3 text-brand-accent group-hover:text-brand-bg transition-colors" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/60">{feature}</span>
+                 </div>
+               ))}
+            </div>
+         </div>
+
+         <div className="space-y-12">
+            <h2 className="text-3xl font-light tracking-tight flex items-center gap-4">
+               <span className="w-12 h-[1px] bg-brand-accent/40"></span>
+               Metodología Aplicada
+            </h2>
+            <div className="bg-brand-surface border border-white/5 p-12 rounded-2xl space-y-10 relative overflow-hidden">
+               <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-brand-accent/5 rounded-full blur-3xl"></div>
+               <div className="space-y-6 relative z-10">
+                  <p className="text-sm text-white/40 leading-relaxed font-light font-serif italic text-lg text-white/60">
+                    "Cada binomio es un mundo. Nuestra formación no se basa en recetas fijas, sino en entender la psicología del perro y la intención del guía para crear un lenguaje común perfecto."
+                  </p>
+                  <div className="pt-6 border-t border-white/5 flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-full bg-brand-accent opacity-20"></div>
+                     <div>
+                        <span className="block text-[10px] uppercase tracking-widest font-black text-white/80">Cristobal Gálvez</span>
+                        <span className="block text-[8px] uppercase tracking-[0.3em] font-bold text-brand-accent">Director Técnico GALPA</span>
+                     </div>
+                  </div>
+               </div>
+               
+               <div className="pt-10">
+                  <button 
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="w-full py-5 border border-brand-accent/30 rounded-lg text-brand-accent text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-brand-accent hover:text-brand-bg transition-all"
+                  >
+                    Consultar Disponibilidad
+                  </button>
+               </div>
+            </div>
+         </div>
       </div>
     </motion.div>
   );
