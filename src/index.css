@@ -6,11 +6,13 @@
   --font-serif: "Cormorant Garamond", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-brand-bg: #0D0F0D;
-  --color-brand-surface: #141815;
-  --color-brand-ink: #E0E2DF;
-  --color-brand-accent: #8B9D77;
-  --color-brand-accent-hover: #9CB086;
+  --color-brand-bg: #FCFCFB;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-ink: #1A1C19;
+  --color-brand-ink-muted: #5C6059;
+  --color-brand-accent: #4C662B;
+  --color-brand-accent-hover: #3E5423;
+  --color-brand-border: #E0E4DB;
   --color-brand-forest: #4A5D4E;
   
   --color-earth-50: #f7f7f2;
@@ -49,7 +51,7 @@
 }
 
 .glass-card {
-  @apply bg-brand-surface border border-white/10 shadow-2xl;
+  @apply bg-brand-surface border border-brand-border shadow-xl;
 }
 
 .serif {

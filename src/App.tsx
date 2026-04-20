@@ -195,7 +195,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-brand-bg text-brand-ink flex flex-col font-sans overflow-x-hidden">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-brand-bg/80 backdrop-blur-md border-b border-white/10">
+      <nav className="sticky top-0 z-50 bg-brand-bg/80 backdrop-blur-md border-b border-brand-border">
         <div className="max-w-7xl mx-auto px-12 h-20 flex justify-between items-center">
             <div 
               className="flex items-center gap-4 cursor-pointer group" 
@@ -335,10 +335,10 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="px-12 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
+      <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-white/50">v0.2.6</span></span>
-          <span className="text-white/5 hidden md:block">|</span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v0.2.7</span></span>
+          <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
         <div className="flex items-center gap-4">
@@ -369,11 +369,11 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
             transition={{ delay: 0.2 }}
           >
             <p className="text-brand-accent text-xs font-bold uppercase tracking-[0.4em] mb-6">Excelencia en Pastoreo</p>
-            <h1 className="text-6xl md:text-8xl font-light leading-[1] mb-8 tracking-tighter">
+            <h1 className="text-6xl md:text-8xl font-light leading-[1] mb-8 tracking-tighter text-brand-ink">
               Formación de <br/>
               <span className="serif text-brand-accent italic">Alto Rendimiento</span>
             </h1>
-            <p className="text-lg text-white/50 max-w-lg leading-relaxed font-light">
+            <p className="text-lg text-brand-ink-muted max-w-lg leading-relaxed font-light">
               Donde la tradición se encuentra con la precisión digital. En GALPA, diseñamos programas exclusivos para binomios que buscan el máximo nivel técnico.
             </p>
           </motion.div>
@@ -391,21 +391,21 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
 
         {/* Right Side: Visual */}
         <div className="w-full md:w-2/5 hidden md:flex items-center justify-center relative">
-            <div className="w-full aspect-square border border-white/10 rounded-3xl p-1 relative overflow-hidden bg-brand-surface group">
+            <div className="w-full aspect-square border border-brand-border rounded-3xl p-1 relative overflow-hidden bg-white group shadow-2xl">
                 <img 
                     src={`${import.meta.env.BASE_URL}Hero.jpg`}
                     alt="GALPA Hero" 
-                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 hover:scale-105"
+                    className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500 hover:scale-105"
                     onError={(e) => {
                       e.currentTarget.src = "https://picsum.photos/seed/bordercollie/800/800";
                     }}
                     referrerPolicy="no-referrer"
                 />
-                <div className="absolute bottom-6 left-6 flex items-center gap-3 bg-brand-bg/60 backdrop-blur-sm p-3 rounded-full border border-white/5 shadow-2xl">
-                    <div className="w-8 h-8 bg-brand-accent/20 rounded-full flex items-center justify-center">
+                <div className="absolute bottom-6 left-6 flex items-center gap-3 bg-white/80 backdrop-blur-sm p-3 rounded-full border border-brand-border shadow-2xl">
+                    <div className="w-8 h-8 bg-brand-accent/10 rounded-full flex items-center justify-center">
                         <Video className="w-3 h-3 text-brand-accent" />
                     </div>
-                    <span className="text-[9px] uppercase tracking-widest font-black text-white/80">Contenido Exclusivo</span>
+                    <span className="text-[9px] uppercase tracking-widest font-black text-brand-ink/80">Contenido Exclusivo</span>
                 </div>
             </div>
         </div>
@@ -414,8 +414,8 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
       {/* Services Section */}
       <section className="max-w-7xl mx-auto w-full space-y-16">
         <div className="space-y-4">
-          <h2 className="text-4xl font-light tracking-tight">Nuestra <span className="serif text-brand-accent">Oferta Académica</span></h2>
-          <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] font-bold">Programas de especialización técnica</p>
+          <h2 className="text-4xl font-light tracking-tight text-brand-ink">Nuestra <span className="serif text-brand-accent">Oferta Académica</span></h2>
+          <p className="text-[10px] text-brand-ink/40 uppercase tracking-[0.4em] font-bold">Programas de especialización técnica</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -427,18 +427,18 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
               onClick={() => onServiceClick(service)}
-              className="group bg-brand-surface border border-white/5 rounded-2xl p-10 flex flex-col gap-8 hover:border-brand-accent/30 transition-all cursor-pointer relative overflow-hidden h-full"
+              className="group bg-white border border-brand-border rounded-2xl p-10 flex flex-col gap-8 hover:border-brand-accent/30 transition-all cursor-pointer relative overflow-hidden h-full shadow-sm hover:shadow-xl"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-brand-accent/5 rounded-full blur-2xl translate-x-12 -translate-y-12 group-hover:bg-brand-accent/10 transition-colors"></div>
               
               <div className="space-y-4 relative z-10 flex-1">
-                <h3 className="text-2xl font-light tracking-tight leading-tight group-hover:text-brand-accent transition-colors">{service.title}</h3>
-                <p className="text-xs text-white/40 leading-relaxed font-medium uppercase tracking-widest">{service.description}</p>
+                <h3 className="text-2xl font-light tracking-tight leading-tight group-hover:text-brand-accent transition-colors text-brand-ink">{service.title}</h3>
+                <p className="text-xs text-brand-ink/60 leading-relaxed font-medium uppercase tracking-widest">{service.description}</p>
               </div>
 
-              <div className="pt-8 border-t border-white/5 flex justify-between items-center relative z-10">
-                <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/20 group-hover:text-brand-accent transition-colors">Explorar Programa</span>
-                <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-brand-accent group-hover:border-brand-accent transition-all">
+              <div className="pt-8 border-t border-brand-border flex justify-between items-center relative z-10">
+                <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-brand-ink/20 group-hover:text-brand-accent transition-colors">Explorar Programa</span>
+                <div className="w-8 h-8 rounded-full border border-brand-border flex items-center justify-center group-hover:bg-brand-accent group-hover:border-brand-accent transition-all">
                   <ChevronRight className="w-3 h-3 group-hover:text-brand-bg transition-colors" />
                 </div>
               </div>
@@ -448,18 +448,18 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
       </section>
 
       {/* Methodology Section */}
-      <section id="about" className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-20 items-center py-20">
-         <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-white/10 bg-brand-surface p-1">
+      <section id="about" className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-20 items-center py-20 px-12 md:px-0">
+         <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-brand-border bg-white p-1 shadow-2xl">
             <img 
               src="https://picsum.photos/seed/training/1000/750" 
               alt="Metodología" 
-              className="w-full h-full object-cover rounded-[1.4rem] opacity-30 grayscale saturate-0 hover:grayscale-0 hover:saturate-100 transition-all duration-1000"
+              className="w-full h-full object-cover rounded-[1.4rem] grayscale saturate-0 hover:grayscale-0 hover:saturate-100 transition-all duration-1000"
               referrerPolicy="no-referrer"
             />
          </div>
          <div className="space-y-8">
             <p className="text-brand-accent text-xs font-bold uppercase tracking-[0.4em]">El Método Galpa</p>
-            <h2 className="text-5xl font-light leading-tight tracking-tight">Formación <span className="serif italic text-brand-accent">Sistemática</span></h2>
+            <h2 className="text-5xl font-light leading-tight tracking-tight text-brand-ink">Formación <span className="serif italic text-brand-accent">Sistemática</span></h2>
             <div className="space-y-6">
               {[
                 { t: "Análisis Biomecánico", d: "Estudiamos cadencia y ángulos de aproximación del perro." },
@@ -469,8 +469,8 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
                 <div key={i} className="flex gap-6">
                   <div className="text-brand-accent font-mono text-xl opacity-20">{String(i+1).padStart(2,'0')}</div>
                   <div className="space-y-2">
-                    <h4 className="text-[10px] uppercase tracking-widest font-black text-white/80">{item.t}</h4>
-                    <p className="text-sm text-white/40 leading-relaxed font-light">{item.d}</p>
+                    <h4 className="text-[10px] uppercase tracking-widest font-black text-brand-ink">{item.t}</h4>
+                    <p className="text-sm text-brand-ink/60 leading-relaxed font-light">{item.d}</p>
                   </div>
                 </div>
               ))}
@@ -492,25 +492,25 @@ function ServiceDetailView({ service, onBack }: { service: ServiceInfo; onBack: 
       className="flex-1 flex flex-col relative z-10"
     >
       {/* Hero Section */}
-      <div className="px-12 py-24 border-b border-white/5 bg-brand-forest/5 relative overflow-hidden">
+      <div className="px-12 py-24 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-20 items-center justify-between">
            <div className="space-y-8 max-w-xl">
              <button 
                 onClick={onBack}
-                className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] font-bold text-white/30 hover:text-brand-accent transition-colors mb-4"
+                className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] font-bold text-brand-ink/40 hover:text-brand-accent transition-colors mb-4"
               >
                 <X className="w-3 h-3" />
                 Volver a la oferta
               </button>
-             <h1 className="text-6xl md:text-7xl font-light tracking-tighter leading-none">{service.title}</h1>
-             <p className="text-xl text-white/50 leading-relaxed font-light">{service.longDescription}</p>
+             <h1 className="text-6xl md:text-7xl font-light tracking-tighter leading-none text-brand-ink">{service.title}</h1>
+             <p className="text-xl text-brand-ink/60 leading-relaxed font-light">{service.longDescription}</p>
            </div>
            
-           <div className="w-full md:w-1/2 aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative group">
+           <div className="w-full md:w-1/2 aspect-video rounded-2xl overflow-hidden border border-brand-border shadow-2xl relative group">
               <img 
                 src={service.image} 
                 alt={service.title} 
-                className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+                className="w-full h-full object-cover transition-all duration-700"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-brand-accent/5 group-hover:bg-transparent transition-colors"></div>
@@ -521,37 +521,37 @@ function ServiceDetailView({ service, onBack }: { service: ServiceInfo; onBack: 
       {/* Features Grid */}
       <div className="max-w-7xl mx-auto px-12 py-24 w-full grid grid-cols-1 md:grid-cols-2 gap-24">
          <div className="space-y-12">
-            <h2 className="text-3xl font-light tracking-tight flex items-center gap-4">
+            <h2 className="text-3xl font-light tracking-tight flex items-center gap-4 text-brand-ink">
                <span className="w-12 h-[1px] bg-brand-accent/40"></span>
                Inclusiones del Programa
             </h2>
             <div className="grid grid-cols-1 gap-6">
                {service.features.map((feature, i) => (
-                 <div key={i} className="flex items-center gap-6 p-6 bg-brand-surface border border-white/5 rounded-xl hover:border-brand-accent/20 transition-all group">
+                 <div key={i} className="flex items-center gap-6 p-6 bg-white border border-brand-border rounded-xl hover:border-brand-accent/20 transition-all group shadow-sm">
                     <div className="w-6 h-6 rounded-full border border-brand-accent/40 flex items-center justify-center group-hover:bg-brand-accent group-hover:border-brand-accent transition-all">
                        <CheckCircle2 className="w-3 h-3 text-brand-accent group-hover:text-brand-bg transition-colors" />
                     </div>
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/60">{feature}</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-brand-ink/70">{feature}</span>
                  </div>
                ))}
             </div>
          </div>
 
          <div className="space-y-12">
-            <h2 className="text-3xl font-light tracking-tight flex items-center gap-4">
+            <h2 className="text-3xl font-light tracking-tight flex items-center gap-4 text-brand-ink">
                <span className="w-12 h-[1px] bg-brand-accent/40"></span>
                Metodología Aplicada
             </h2>
-            <div className="bg-brand-surface border border-white/5 p-12 rounded-2xl space-y-10 relative overflow-hidden">
+            <div className="bg-white border border-brand-border p-12 rounded-2xl space-y-10 relative overflow-hidden shadow-sm">
                <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-brand-accent/5 rounded-full blur-3xl"></div>
                <div className="space-y-6 relative z-10">
-                  <p className="text-sm text-white/40 leading-relaxed font-light font-serif italic text-lg text-white/60">
+                  <p className="text-sm text-brand-ink/60 leading-relaxed font-light font-serif italic text-lg transition-colors">
                     "Cada binomio es un mundo. Nuestra formación no se basa en recetas fijas, sino en entender la psicología del perro y la intención del guía para crear un lenguaje común perfecto."
                   </p>
-                  <div className="pt-6 border-t border-white/5 flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-full bg-brand-accent opacity-20"></div>
+                  <div className="pt-6 border-t border-brand-border flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-full bg-brand-accent opacity-10"></div>
                      <div>
-                        <span className="block text-[10px] uppercase tracking-widest font-black text-white/80">Cristobal Gálvez</span>
+                        <span className="block text-[10px] uppercase tracking-widest font-black text-brand-ink">Cristobal Gálvez</span>
                         <span className="block text-[8px] uppercase tracking-[0.3em] font-bold text-brand-accent">Director Técnico GALPA</span>
                      </div>
                   </div>
@@ -628,35 +628,35 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData, pass?:
     >
        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none"></div>
 
-      <div className="w-full max-w-sm bg-brand-surface border border-white/10 p-12 rounded-2xl shadow-2xl relative overflow-hidden z-10">
+      <div className="w-full max-w-sm bg-white border border-brand-border p-12 rounded-2xl shadow-2xl relative overflow-hidden z-10">
         {/* Subtle gradient top edge */}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-brand-accent to-transparent opacity-50"></div>
         
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-semibold mb-3 tracking-tight text-white">Acceso Campus</h2>
-          <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">Portal Educativo GALPA</p>
+          <h2 className="text-3xl font-semibold mb-3 tracking-tight text-brand-ink">Acceso Campus</h2>
+          <p className="text-[10px] text-brand-ink/40 uppercase tracking-[0.2em] font-bold">Portal Educativo GALPA</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-3">
-            <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-black ml-1">Identificación</label>
+            <label className="text-[10px] uppercase tracking-[0.2em] text-brand-ink/50 font-black ml-1">Identificación</label>
             <input 
               type="text" 
               required 
               value={user}
               onChange={(e) => setUser(e.target.value)}
-              className="w-full bg-brand-bg border border-white/10 rounded-lg px-5 py-4 text-sm focus:outline-none focus:border-brand-accent transition-all placeholder:text-white/5" 
+              className="w-full bg-brand-bg border border-brand-border rounded-lg px-5 py-4 text-sm focus:outline-none focus:border-brand-accent transition-all placeholder:text-brand-ink/10" 
               placeholder="Nombre de usuario"
             />
           </div>
           <div className="space-y-3">
-            <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-black ml-1">Clave de Acceso</label>
+            <label className="text-[10px] uppercase tracking-[0.2em] text-brand-ink/50 font-black ml-1">Clave de Acceso</label>
             <input 
               type="password" 
               required 
               value={pass}
               onChange={(e) => setPass(e.target.value)}
-              className="w-full bg-brand-bg border border-white/10 rounded-lg px-5 py-4 text-sm focus:outline-none focus:border-brand-accent transition-all placeholder:text-white/5" 
+              className="w-full bg-brand-bg border border-brand-border rounded-lg px-5 py-4 text-sm focus:outline-none focus:border-brand-accent transition-all placeholder:text-brand-ink/10" 
               placeholder="••••••••"
             />
           </div>
@@ -676,7 +676,7 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData, pass?:
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-brand-accent hover:bg-brand-accent-hover disabled:bg-white/5 disabled:text-white/20 text-brand-bg font-black text-xs uppercase tracking-[0.2em] py-5 rounded-lg transition-all shadow-lg shadow-brand-accent/5 active:scale-[0.98]"
+            className="w-full bg-brand-accent hover:bg-brand-accent-hover disabled:bg-brand-ink/5 disabled:text-brand-ink/20 text-brand-bg font-black text-xs uppercase tracking-[0.2em] py-5 rounded-lg transition-all shadow-lg shadow-brand-accent/5 active:scale-[0.98]"
           >
             {loading ? "Verificando..." : "Entrar al Campo Virtual"}
           </button>
@@ -685,11 +685,11 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData, pass?:
              <button 
                 type="button"
                 onClick={onBack}
-                className="text-[10px] uppercase tracking-widest text-white/30 hover:text-brand-accent transition-colors"
+                className="text-[10px] uppercase tracking-widest text-brand-ink/30 hover:text-brand-accent transition-colors"
               >
                 Cancelar
               </button>
-              <a href="#" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-brand-accent transition-colors">Solicitar Registro</a>
+              <a href="#" className="text-[10px] uppercase tracking-widest text-brand-ink/30 hover:text-brand-accent transition-colors">Solicitar Registro</a>
           </div>
         </form>
       </div>
@@ -770,13 +770,13 @@ function TeacherDashboard({ onLogout }: { onLogout: () => void }) {
       className="flex-1 flex flex-col bg-brand-bg"
     >
       {/* Header Panel */}
-      <div className="px-12 py-16 border-b border-white/5 bg-brand-forest/5 relative overflow-hidden">
+      <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-5xl font-light tracking-tighter leading-none">
+            <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
                 Panel de <span className="serif text-brand-accent">Gestión Académica</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
               Instructor Principal GALPA
             </p>
           </div>
@@ -789,7 +789,7 @@ function TeacherDashboard({ onLogout }: { onLogout: () => void }) {
                 className={`px-4 py-2 rounded-full text-[9px] uppercase tracking-widest font-bold border transition-all ${
                   selectedType === type 
                   ? "bg-brand-accent border-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" 
-                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/30"
+                  : "bg-brand-accent/5 border-brand-border text-brand-ink/40 hover:border-brand-accent/30 shadow-sm"
                 }`}
               >
                 {type}
@@ -807,27 +807,27 @@ function TeacherDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         ) : (
           <div className="space-y-12">
-            <div className="flex items-center justify-between border-b border-white/5 pb-6">
-               <h2 className="text-xl font-light tracking-tight flex items-center gap-3">
+            <div className="flex items-center justify-between border-b border-brand-border pb-6">
+               <h2 className="text-xl font-light tracking-tight flex items-center gap-3 text-brand-ink">
                  <Users className="w-5 h-5 text-brand-accent" />
                  Alumnos en <span className="text-brand-accent italic serif">{selectedType}</span>
                </h2>
                <div className="flex items-center gap-6">
                   <button 
                     onClick={fetchStudents}
-                    className="text-[9px] uppercase tracking-widest font-bold text-white/30 hover:text-brand-accent transition-colors"
+                    className="text-[9px] uppercase tracking-widest font-bold text-brand-ink/30 hover:text-brand-accent transition-colors"
                   >
                     Actualizar Datos
                   </button>
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-white/20">
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/20">
                     {filteredStudents.length} Alumno{filteredStudents.length !== 1 ? 's' : ''}
                   </span>
                </div>
             </div>
 
             {filteredStudents.length === 0 ? (
-              <div className="py-20 text-center border border-dashed border-white/10 rounded-2xl">
-                 <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-30">No hay alumnos registrados en esta categoría</p>
+              <div className="py-20 text-center border border-dashed border-brand-border rounded-2xl bg-white shadow-sm">
+                 <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-ink/30">No hay alumnos registrados en esta categoría</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -838,34 +838,34 @@ function TeacherDashboard({ onLogout }: { onLogout: () => void }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     onClick={() => setTeacherView({ mode: "student-detail", selectedStudent: student })}
-                    className="bg-brand-surface border border-white/5 p-8 rounded-xl hover:border-brand-accent/20 transition-all group cursor-pointer relative overflow-hidden"
+                    className="bg-white border border-brand-border p-8 rounded-xl hover:border-brand-accent/40 transition-all group cursor-pointer relative overflow-hidden shadow-sm hover:shadow-xl"
                   >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-accent/5 rounded-full blur-2xl translate-x-12 -translate-y-12 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
                     <div className="flex justify-between items-start mb-6 relative z-10">
-                      <div className="w-12 h-12 bg-brand-bg rounded-lg border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Users className="w-5 h-5 text-brand-accent/60" />
+                      <div className="w-12 h-12 bg-brand-bg rounded-lg border border-brand-border flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Users className="w-5 h-5 text-brand-accent" />
                       </div>
                       <div className="text-right">
-                        <span className="block text-[8px] uppercase tracking-widest font-black text-white/20">Clases Totales</span>
+                        <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Totales</span>
                         <span className="text-xl font-light text-brand-accent">{student.classes.length}</span>
                       </div>
                     </div>
                     
                     <div className="relative z-10">
-                      <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors">{student.user}</h3>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-white/30 mb-6">Ver expediente completo</p>
+                      <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors text-brand-ink">{student.user}</h3>
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/30 mb-6">Ver expediente completo</p>
                     </div>
                     
-                    <div className="space-y-4 border-t border-white/5 pt-6 relative z-10">
+                    <div className="space-y-4 border-t border-brand-border pt-6 relative z-10">
                        {student.classes.filter((c: any) => selectedType === "Todos" || c.tipo === selectedType).slice(0, 2).map((c: any, cIdx: number) => (
                          <div key={cIdx} className="flex items-center gap-3">
                             <Play className="w-2 h-2 text-brand-accent" />
-                            <span className="text-[9px] uppercase tracking-widest font-medium text-white/50 truncate">{c.titulo}</span>
+                            <span className="text-[9px] uppercase tracking-widest font-medium text-brand-ink/60 truncate">{c.titulo}</span>
                          </div>
                        ))}
                        {student.classes.filter((c: any) => selectedType === "Todos" || c.tipo === selectedType).length > 2 && (
-                         <p className="text-[8px] uppercase tracking-widest font-bold text-brand-accent/40 italic">
+                         <p className="text-[8px] uppercase tracking-widest font-bold text-brand-accent italic">
                             + {student.classes.filter((c: any) => selectedType === "Todos" || c.tipo === selectedType).length - 2} clases más
                          </p>
                        )}
@@ -894,20 +894,20 @@ function TeacherStudentDetail({ student, onBack, onRefresh }: { student: any; on
       className="flex-1 flex flex-col bg-brand-bg relative z-10"
     >
       {/* Header Panel */}
-      <div className="px-12 py-16 border-b border-white/5 bg-brand-forest/5 relative overflow-hidden">
+      <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="space-y-4">
              <button 
                 onClick={onBack}
-                className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] font-bold text-white/30 hover:text-brand-accent transition-colors mb-4"
+                className="flex items-center gap-2 text-[9px] uppercase tracking-[0.3em] font-bold text-brand-ink/40 hover:text-brand-accent transition-colors mb-4"
               >
                 <ChevronRight className="w-3 h-3 rotate-180" />
                 Volver al listado
               </button>
-            <h1 className="text-5xl font-light tracking-tighter leading-none">
+            <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
                 Expediente: <span className="serif text-brand-accent">{student.user}</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 italic">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40 italic">
               Modo Edición: Feedback de Instructor Activo
             </p>
           </div>
@@ -917,7 +917,7 @@ function TeacherStudentDetail({ student, onBack, onRefresh }: { student: any; on
                onClick={() => setShowAddClass(!showAddClass)}
                className={`px-8 py-4 rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold transition-all shadow-xl flex items-center gap-3 ${
                  showAddClass 
-                 ? "bg-white/10 text-white border border-white/20" 
+                 ? "bg-brand-ink/10 text-brand-ink border border-brand-border" 
                  : "bg-brand-accent text-brand-bg border border-brand-accent shadow-brand-accent/20"
                }`}
             >
@@ -1006,7 +1006,7 @@ const TeacherClassCard: React.FC<TeacherClassCardProps> = ({ clase, studentName,
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 items-start opacity-90 hover:opacity-100 transition-opacity">
        {/* Video Side */}
        <div className="space-y-6">
-        <div className="aspect-video bg-black rounded-xl overflow-hidden border border-white/5 relative group shadow-2xl">
+        <div className="aspect-video bg-black rounded-xl overflow-hidden border border-brand-border relative group shadow-2xl">
           <iframe 
             src={`https://www.youtube.com/embed/${getYoutubeId(clase.videoUrl)}`}
             className="absolute inset-0 w-full h-full grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700"
@@ -1018,17 +1018,17 @@ const TeacherClassCard: React.FC<TeacherClassCardProps> = ({ clase, studentName,
         <div className="flex justify-between items-center px-4">
             <div className="flex items-center gap-4">
                 <span className="text-[10px] uppercase tracking-widest font-black text-brand-accent">{clase.tipo}</span>
-                <span className="text-white/10 font-bold text-xs">/</span>
-                <span className="text-[10px] uppercase tracking-widest font-black text-white/30">{formatDate(clase.fecha)}</span>
+                <span className="text-brand-ink/10 font-bold text-xs">/</span>
+                <span className="text-[10px] uppercase tracking-widest font-black text-brand-ink/30">{formatDate(clase.fecha)}</span>
             </div>
-            <span className="text-[8px] uppercase tracking-widest font-black text-white/20">ID REF: #{clase.id}</span>
+            <span className="text-[8px] uppercase tracking-widest font-black text-brand-ink/20">ID REF: #{clase.id}</span>
         </div>
       </div>
 
       {/* Content Side */}
       <div className="space-y-10 border-l border-brand-accent/10 pl-12 h-full flex flex-col justify-between">
         <div className="space-y-6">
-            <h3 className="text-4xl font-light tracking-tight leading-none uppercase text-white/90">
+            <h3 className="text-4xl font-light tracking-tight leading-none uppercase text-brand-ink">
               {clase.titulo}
             </h3>
             
@@ -1038,7 +1038,7 @@ const TeacherClassCard: React.FC<TeacherClassCardProps> = ({ clase, studentName,
                     value={teacherNotas}
                     onChange={(e) => setTeacherNotas(e.target.value)}
                     disabled={status === "saving"}
-                    className="w-full bg-brand-surface border border-white/10 rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-accent h-32 leading-relaxed"
+                    className="w-full bg-white border border-brand-border rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-ink h-32 leading-relaxed shadow-sm"
                     placeholder="Escribe tu análisis técnico aquí..."
                 />
                 <button 
@@ -1059,10 +1059,10 @@ const TeacherClassCard: React.FC<TeacherClassCardProps> = ({ clase, studentName,
             </div>
         </div>
 
-        <div className="space-y-4 pt-6 border-t border-white/5 opacity-60">
-            <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-white/30">Reflexión Alumno</h4>
-            <div className="bg-white/[0.01] border border-white/5 rounded-lg p-5">
-              <p className="text-xs text-white/40 leading-relaxed font-light">
+        <div className="space-y-4 pt-6 border-t border-brand-border opacity-60">
+            <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-ink/30">Reflexión Alumno</h4>
+            <div className="bg-brand-accent/5 border border-brand-border rounded-lg p-5">
+              <p className="text-xs text-brand-ink/60 leading-relaxed font-light">
                 {clase.notasAlumno || "El alumno aún no ha realizado anotaciones."}
               </p>
             </div>
@@ -1129,40 +1129,40 @@ const AddNewClassForm = ({ studentName, onSuccess }: { studentName: string; onSu
     <form onSubmit={handleSubmit} className="space-y-8">
        <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold uppercase tracking-widest text-brand-accent">Nueva Clase: Online</h3>
-          <span className="text-[10px] uppercase tracking-widest font-black text-white/20">Destinatario: {studentName}</span>
+          <span className="text-[10px] uppercase tracking-widest font-black text-brand-ink/20">Destinatario: {studentName}</span>
        </div>
        
        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
-             <label className="text-[9px] uppercase tracking-widest font-black text-white/40">Título de la Sesión</label>
+             <label className="text-[9px] uppercase tracking-widest font-black text-brand-ink/40">Título de la Sesión</label>
              <input 
                type="text" 
                required
                value={formData.titulo}
                onChange={e => setFormData({...formData, titulo: e.target.value})}
-               className="w-full bg-brand-bg border border-white/10 rounded-lg p-4 text-sm focus:border-brand-accent text-white outline-none"
+               className="w-full bg-white border border-brand-border rounded-lg p-4 text-sm focus:border-brand-accent text-brand-ink outline-none shadow-sm"
                placeholder="Ej: Análisis Posición Outrun..."
              />
           </div>
           <div className="space-y-3">
-             <label className="text-[9px] uppercase tracking-widest font-black text-white/40">URL/ID Video YouTube</label>
+             <label className="text-[9px] uppercase tracking-widest font-black text-brand-ink/40">URL/ID Video YouTube</label>
              <input 
                type="text" 
                required
                value={formData.videoUrl}
                onChange={e => setFormData({...formData, videoUrl: e.target.value})}
-               className="w-full bg-brand-bg border border-white/10 rounded-lg p-4 text-sm focus:border-brand-accent text-white outline-none"
+               className="w-full bg-white border border-brand-border rounded-lg p-4 text-sm focus:border-brand-accent text-brand-ink outline-none shadow-sm"
                placeholder="https://www.youtube.com/watch?v=..."
              />
           </div>
        </div>
 
        <div className="space-y-3">
-          <label className="text-[9px] uppercase tracking-widest font-black text-white/40">Feedback Inicial del Instructor</label>
+          <label className="text-[9px] uppercase tracking-widest font-black text-brand-ink/40">Feedback Inicial del Instructor</label>
           <textarea 
              value={formData.notas}
              onChange={e => setFormData({...formData, notas: e.target.value})}
-             className="w-full bg-brand-bg border border-white/10 rounded-lg p-4 text-sm focus:border-brand-accent text-white outline-none h-24"
+             className="w-full bg-white border border-brand-border rounded-lg p-4 text-sm focus:border-brand-accent text-brand-ink outline-none h-24 shadow-sm"
              placeholder="Primeras impresiones de la clase..."
           />
        </div>
@@ -1189,31 +1189,31 @@ function DashboardView({ user, onLogout }: { user: AlumnoData; onLogout: () => v
       className="flex-1 flex flex-col bg-brand-bg"
     >
       {/* Header Panel */}
-      <div className="px-12 py-20 border-b border-white/5 relative overflow-hidden">
+      <div className="px-12 py-20 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-accent/5 rounded-full blur-[100px] translate-x-20 -translate-y-20"></div>
         
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end gap-10 relative z-10">
           <div className="space-y-4">
-            <h1 className="text-6xl font-light tracking-tighter leading-[0.9]">
+            <h1 className="text-6xl font-light tracking-tighter leading-[0.9] text-brand-ink">
                 Centro de <br/>
                 <span className="serif text-brand-accent">Aprendizaje</span>
             </h1>
             <div className="flex items-center gap-3 py-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-brand-accent shadow-[0_0_8px_var(--color-brand-accent)]"></div>
-                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">
-                  Panel de Alumno: <span className="text-white">{user.user}</span>
+                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
+                  Panel de Alumno: <span className="text-brand-ink font-bold">{user.user}</span>
                 </p>
             </div>
           </div>
 
-          <div className="flex gap-12 border-l border-white/10 pl-12 h-20 items-center">
+          <div className="flex gap-12 border-l border-brand-border pl-12 h-20 items-center">
              <div className="space-y-1">
                 <span className="block text-[32px] font-light leading-none text-brand-accent">{user.classes.length}</span>
-                <span className="block text-[8px] uppercase tracking-widest font-black text-white/20">Clases Registradas</span>
+                <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Registradas</span>
              </div>
              <div className="space-y-1">
-                <span className="block text-[32px] font-light leading-none text-blue-400">AA</span>
-                <span className="block text-[8px] uppercase tracking-widest font-black text-white/20">Calificación Promedio</span>
+                <span className="block text-[32px] font-light leading-none text-blue-600">AA</span>
+                <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Calificación Promedio</span>
              </div>
           </div>
         </div>
@@ -1221,9 +1221,9 @@ function DashboardView({ user, onLogout }: { user: AlumnoData; onLogout: () => v
 
       <div className="flex-1 max-w-7xl mx-auto px-12 py-20 w-full grid grid-cols-1 gap-20">
           {user.classes.length === 0 ? (
-            <div className="w-full py-40 border border-white/5 bg-white/[0.02] rounded-2xl flex flex-col items-center justify-center gap-6">
-              <Info className="w-8 h-8 text-white/10" />
-              <p className="text-[10px] uppercase tracking-[0.4em] font-black text-white/20">No se han encontrado registros de clases</p>
+            <div className="w-full py-40 border border-brand-border bg-white rounded-2xl flex flex-col items-center justify-center gap-6 shadow-sm">
+              <Info className="w-8 h-8 text-brand-ink/10" />
+              <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-ink/20">No se han encontrado registros de clases</p>
             </div>
           ) : (
             user.classes.slice().reverse().map((clase, idx) => (
@@ -1295,10 +1295,10 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
     >
       {/* Video Side */}
       <div className="space-y-6">
-        <div className="aspect-video bg-black rounded-xl overflow-hidden border border-white/5 relative group">
+        <div className="aspect-video bg-black rounded-xl overflow-hidden border border-brand-border relative group shadow-2xl">
           <iframe 
             src={`https://www.youtube.com/embed/${getYoutubeId(clase.videoUrl)}`}
-            className="absolute inset-0 w-full h-full grayscale-[0.5] group-hover:grayscale-0 transition-all duration-700"
+            className="absolute inset-0 w-full h-full grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700"
             title={clase.titulo}
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1308,26 +1308,26 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
         <div className="flex justify-between items-center px-4">
             <div className="flex items-center gap-4">
                 <span className="text-[10px] uppercase tracking-widest font-black text-brand-accent">{clase.tipo || 'ENTRENAMIENTO'}</span>
-                <span className="text-white/10 font-bold text-xs">/</span>
-                <span className="text-[10px] uppercase tracking-widest font-black text-white/30">{formatDate(clase.fecha)}</span>
+                <span className="text-brand-ink/10 font-bold text-xs">/</span>
+                <span className="text-[10px] uppercase tracking-widest font-black text-brand-ink/30">{formatDate(clase.fecha)}</span>
             </div>
             <div className="flex items-center gap-2">
-                <Video className="w-3 h-3 text-white/20" />
-                <span className="text-[8px] uppercase tracking-widest font-black text-white/20">Video-Análisis Activo</span>
+                <Video className="w-3 h-3 text-brand-ink/20" />
+                <span className="text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Video-Análisis Activo</span>
             </div>
         </div>
       </div>
 
       {/* Content Side */}
-      <div className="space-y-10 border-l border-white/5 pl-12 h-full flex flex-col justify-between">
+      <div className="space-y-10 border-l border-brand-border pl-12 h-full flex flex-col justify-between">
         <div className="space-y-6">
-            <h3 className="text-4xl font-light tracking-tight leading-none uppercase">
+            <h3 className="text-4xl font-light tracking-tight leading-none uppercase text-brand-ink">
               {clase.titulo || 'Clase Magistral'}
             </h3>
             
             <div className="space-y-3">
                 <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-accent">Feedback Técnico</h4>
-                <p className="text-sm text-white/50 leading-relaxed font-light italic border-l border-brand-accent/20 pl-6 py-2">
+                <p className="text-sm text-brand-ink/60 leading-relaxed font-light italic border-l border-brand-accent/20 pl-6 py-2">
                   "{clase.notas || 'Pendiente de revisión técnica.'}"
                 </p>
             </div>
@@ -1335,12 +1335,12 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
 
         <div className="space-y-6">
             <div className="space-y-4">
-                <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-white/30">Anotaciones del Alumno</h4>
+                <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-ink/30">Anotaciones del Alumno</h4>
                 <textarea 
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     disabled={status === "saving"}
-                    className="w-full bg-white/[0.02] border border-white/10 rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-white/70 min-h-[120px]"
+                    className="w-full bg-white border border-brand-border rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-ink/70 min-h-[120px] shadow-sm"
                     placeholder="Reflexiones sobre la sesión..."
                 />
             </div>
