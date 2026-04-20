@@ -56,6 +56,7 @@ interface ServiceInfo {
   longDescription: string;
   image: string;
   features: string[];
+  quote: string;
 }
 
 // --- Constants ---
@@ -80,7 +81,8 @@ const SERVICES: ServiceInfo[] = [
     description: "Análisis técnico de precisión desde cualquier lugar.",
     longDescription: "Nuestro sistema de formación digital te permite recibir correcciones técnicas en tiempo real. Analizamos tus vídeos, corregimos posiciones y trazamos líneas de trabajo personalizadas sin necesidad de desplazamiento. La tecnología al servicio de la tradición.",
     image: `${import.meta.env.BASE_URL}online.png`,
-    features: ["Video-análisis en directo", "Sesiones personalizadas", "Grabación de la sesión para repaso", "Plan de trabajo Semanal"]
+    features: ["Video-análisis en directo", "Sesiones personalizadas", "Grabación de la sesión para repaso", "Plan de trabajo Semanal"],
+    quote: "Ayuda a tu perro para que en el futuro tu perro pueda ayudarte a ti."
   },
   {
     id: "seminarios",
@@ -88,31 +90,35 @@ const SERVICES: ServiceInfo[] = [
     description: "Evolución y convivencia técnica, en casa o en ruta.",
     longDescription: "Dos jornadas de trabajo intensivo en nuestras instalaciones o fuera de ellas (Consultar disponibilidad). Enfocadas en la evolución tanto de perros como de guías. Una experiencia de convivencia y aprendizaje técnico de alto impacto.",
     image: `${import.meta.env.BASE_URL}seminarios.png`,
-    features: ["Práctica real con rebaño", "Grupos reducidos", "Evaluación de instinto", "Estrategias de desarrollo formativo"]
+    features: ["Práctica real con rebaño", "Grupos reducidos", "Evaluación de instinto", "Estrategias de desarrollo formativo"],
+    quote: "La evolución técnica se forja en el campo, entendiendo cada presión y cada silencio."
   },
   {
     id: "webminar",
     title: "Webminar",
     description: "Conocimiento táctico y teoría aplicada.",
     longDescription: "Sesiones temáticas sobre psicología canina aplicada al pastoreo, gestión de rebaños y tácticas de concurso. La base teórica necesaria para entender el 'por qué' de cada movimiento en el campo.",
-    image: "https://picsum.photos/seed/webinar/800/450",
-    features: ["Temarios Especificos", "Material de apoyo descargable", "Acceso a la grabación", "Ronda de preguntas y respuestas"]
+    image: `${import.meta.env.BASE_URL}webinar.png`,
+    features: ["Temarios Especificos", "Material de apoyo descargable", "Acceso a la grabación", "Ronda de preguntas y respuestas"],
+    quote: "La teoría sin práctica es estéril, pero la práctica sin teoría es ciega."
   },
   {
     id: "material-exclusivo",
     title: "Acceso a material exclusivo",
     description: "Tu biblioteca técnica de referencia.",
     longDescription: "Acceso ilimitado a nuestra videoteca premium. Incluye tutoriales paso a paso, análisis de trabajos especificos con esquemas tácticos que te ayudarán a reconocer y solventar todas las situaciones.",
-    image: "https://picsum.photos/seed/library/800/450",
-    features: ["Tutoriales HD", "Esquemas de maniobras", "Análisis de trabajos", "Actualizaciones semanales"]
+    image: `${import.meta.env.BASE_URL}Material exclusivo.png`,
+    features: ["Tutoriales HD", "Esquemas de maniobras", "Análisis de trabajos", "Actualizaciones semanales"],
+    quote: "La maestría nace de la observación constante y el análisis de cada detalle táctico."
   },
   {
     id: "intensivo",
     title: "Curso Intensivo cuatrimestral",
     description: "La corona del aprendizaje en GALPA.",
     longDescription: "Un programa estructurado para aquellos que buscan la maestría. Cuatro meses de seguimiento riguroso, objetivos por etapas y monitorización constante del progreso del binomio guía-perro.",
-    image: "https://picsum.photos/seed/intensive/800/450",
-    features: ["Módulos teóricos y prácticos", "Modalidad mixta presencial-Online", "Examen de nivel por etapa", "Seguimiento prioritario"]
+    image: `${import.meta.env.BASE_URL}Curso Cuatrimestral.png`,
+    features: ["Módulos teóricos y prácticos", "Modalidad mixta presencial-Online", "Examen de nivel por etapa", "Seguimiento prioritario"],
+    quote: "El compromiso con la excelencia requiere tiempo, paciencia y una estructura de trabajo sólida."
   }
 ];
 
@@ -337,7 +343,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v0.2.7</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v0.3.3</span></span>
           <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -449,11 +455,14 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
 
       {/* Methodology Section */}
       <section id="about" className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-20 items-center py-20 px-12 md:px-0">
-         <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-brand-border bg-white p-1 shadow-2xl">
+         <div className="aspect-[4/3] rounded-3xl overflow-hidden border border-brand-border bg-white p-12 shadow-2xl flex items-center justify-center">
             <img 
-              src="https://picsum.photos/seed/training/1000/750" 
-              alt="Metodología" 
-              className="w-full h-full object-cover rounded-[1.4rem] grayscale saturate-0 hover:grayscale-0 hover:saturate-100 transition-all duration-1000"
+              src={`${import.meta.env.BASE_URL}Logo.png`}
+              alt="Logo GALPA" 
+              className="w-full h-full object-contain transition-all duration-1000 hover:scale-105"
+              onError={(e) => {
+                e.currentTarget.src = "https://picsum.photos/seed/galpa/800/800";
+              }}
               referrerPolicy="no-referrer"
             />
          </div>
@@ -462,9 +471,9 @@ function LandingView({ onStart, onServiceClick }: { onStart: () => void; onServi
             <h2 className="text-5xl font-light leading-tight tracking-tight text-brand-ink">Formación <span className="serif italic text-brand-accent">Sistemática</span></h2>
             <div className="space-y-6">
               {[
-                { t: "Análisis Biomecánico", d: "Estudiamos cadencia y ángulos de aproximación del perro." },
-                { t: "Psicología de Rebaño", d: "Entendimiento profundo de la presión y el espacio." },
-                { t: "Estrategia de Concurso", d: "Técnicas de manejo para el más alto nivel competitivo." }
+                { t: "Comprensión e Instinto", d: "Lectura profunda del perro para armonizar su intención natural con la técnica." },
+                { t: "Psicología de Rebaño", d: "Análisis de movimientos adecuados basados en la presión y el entendimiento del espacio." },
+                { t: "Eficiencia en Granja", d: "Estrategias de manejo real para la máxima funcionalidad en el trabajo diario con ganado." }
               ].map((item, i) => (
                 <div key={i} className="flex gap-6">
                   <div className="text-brand-accent font-mono text-xl opacity-20">{String(i+1).padStart(2,'0')}</div>
@@ -546,7 +555,7 @@ function ServiceDetailView({ service, onBack }: { service: ServiceInfo; onBack: 
                <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-brand-accent/5 rounded-full blur-3xl"></div>
                <div className="space-y-6 relative z-10">
                   <p className="text-sm text-brand-ink/60 leading-relaxed font-light font-serif italic text-lg transition-colors">
-                    "Cada binomio es un mundo. Nuestra formación no se basa en recetas fijas, sino en entender la psicología del perro y la intención del guía para crear un lenguaje común perfecto."
+                    "{service.quote}"
                   </p>
                   <div className="pt-6 border-t border-brand-border flex items-center gap-4">
                      <div className="w-10 h-10 rounded-full bg-brand-accent opacity-10"></div>
