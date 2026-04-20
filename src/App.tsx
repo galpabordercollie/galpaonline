@@ -142,6 +142,7 @@ const getYoutubeId = (url: string) => {
 
 // --- Components ---
 
+// Sincronización con la nueva ruta /online/
 export default function App() {
   const [view, setView] = useState<ViewState>("landing");
   const [selectedService, setSelectedService] = useState<ServiceInfo | null>(null);
