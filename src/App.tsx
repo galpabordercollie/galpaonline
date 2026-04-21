@@ -157,6 +157,7 @@ const getYoutubeId = (url: string) => {
 export default function App() {
   const [view, setView] = useState<ViewState>("landing");
   const [selectedService, setSelectedService] = useState<ServiceInfo | null>(null);
+  const [contactSource, setContactSource] = useState<string>("Consulta General");
   const [user, setUser] = useState<AlumnoData | null>(null);
   const [isNavOpen, setIsNavOpen] = useState(false);
 
@@ -322,24 +323,34 @@ export default function App() {
             <LandingView 
               onStart={() => setView("login")} 
               onServiceClick={openService}
-              onContact={() => setView("contact")}
+              onContact={(source) => {
+                setContactSource(source);
+                setView("contact");
+              }}
             />
           )}
           {view === "service-detail" && selectedService && (
             <ServiceDetailView 
               service={selectedService} 
               onBack={() => setView("landing")} 
-              onContact={() => setView("contact")}
+              onContact={(source) => {
+                setContactSource(source);
+                setView("contact");
+              }}
             />
           )}
           {view === "contact" && (
-            <ContactView onBack={() => {
-              if (selectedService) {
-                setView("service-detail");
-              } else {
-                setView("landing");
-              }
-            }} />
+            <ContactView 
+              source={contactSource}
+              onBack={() => {
+                if (selectedService) {
+                  setView("service-detail");
+                } else {
+                  setContactSource("Consulta General");
+                  setView("landing");
+                }
+              }} 
+            />
           )}
           {view === "login" && (
             <LoginView 
@@ -359,7 +370,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v0.5.0</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.0.0</span></span>
           <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -374,7 +385,7 @@ export default function App() {
 
 // --- View: Landing ---
 
-function LandingView({ onStart, onServiceClick, onContact }: { onStart: () => void; onServiceClick: (s: ServiceInfo) => void; onContact: () => void }) {
+function LandingView({ onStart, onServiceClick, onContact }: { onStart: () => void; onServiceClick: (s: ServiceInfo) => void; onContact: (source: string) => void }) {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -460,7 +471,7 @@ function LandingView({ onStart, onServiceClick, onContact }: { onStart: () => vo
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    onContact();
+                    onContact(service.title);
                   }}
                   className="mt-4 px-6 py-3 border border-brand-accent/20 rounded-lg text-brand-accent text-[8px] uppercase tracking-[0.2em] font-bold hover:bg-brand-accent hover:text-white transition-all w-fit"
                 >
@@ -518,7 +529,7 @@ function LandingView({ onStart, onServiceClick, onContact }: { onStart: () => vo
 
 // --- View: Service Detail ---
 
-function ServiceDetailView({ service, onBack, onContact }: { service: ServiceInfo; onBack: () => void; onContact: () => void }) {
+function ServiceDetailView({ service, onBack, onContact }: { service: ServiceInfo; onBack: () => void; onContact: (source: string) => void }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 40 }}
@@ -599,7 +610,7 @@ function ServiceDetailView({ service, onBack, onContact }: { service: ServiceInf
                
                <div className="pt-10">
                   <button 
-                    onClick={onContact}
+                    onClick={() => onContact(service.title)}
                     className="w-full py-5 border border-brand-accent/30 rounded-lg text-brand-accent text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-brand-accent hover:text-brand-bg transition-all"
                   >
                     Consultar Disponibilidad
@@ -614,7 +625,7 @@ function ServiceDetailView({ service, onBack, onContact }: { service: ServiceInf
 
 // --- View: Contact Form ---
 
-function ContactView({ onBack }: { onBack: () => void }) {
+function ContactView({ source, onBack }: { source: string; onBack: () => void }) {
   const [formData, setFormData] = useState({ nombre: "", telefono: "", email: "", mensaje: "" });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -631,7 +642,7 @@ function ContactView({ onBack }: { onBack: () => void }) {
     setStatus("submitting");
 
     try {
-      const url = `${SCRIPT_URL}?action=submitContactForm&nombre=${encodeURIComponent(formData.nombre)}&telefono=${encodeURIComponent(formData.telefono)}&email=${encodeURIComponent(formData.email)}&mensaje=${encodeURIComponent(formData.mensaje)}`;
+      const url = `${SCRIPT_URL}?action=submitContactForm&nombre=${encodeURIComponent(formData.nombre)}&telefono=${encodeURIComponent(formData.telefono)}&email=${encodeURIComponent(formData.email)}&mensaje=${encodeURIComponent(formData.mensaje)}&fuente=${encodeURIComponent(source)}`;
 
       await fetch(url, {
         method: "POST"
@@ -687,6 +698,7 @@ function ContactView({ onBack }: { onBack: () => void }) {
       <div className="space-y-12">
         <div className="space-y-4">
           <h2 className="text-5xl font-light tracking-tight text-brand-ink">Consultar <span className="serif italic text-brand-accent">Disponibilidad</span></h2>
+          <p className="text-brand-accent text-[9px] uppercase tracking-widest font-bold">Interés: {source}</p>
           <p className="text-sm text-brand-ink/60 font-light max-w-md leading-relaxed">
             Completa el siguiente formulario y nos pondremos en contacto contigo para resolver tu consulta.
           </p>
