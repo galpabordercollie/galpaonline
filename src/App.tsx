@@ -86,7 +86,7 @@ const SERVICES: ServiceInfo[] = [
     description: "Análisis técnico de precisión para perro pastor desde cualquier lugar.",
     longDescription: "Nuestro sistema de formación digital para sheepdogs te permite recibir correcciones técnicas en tiempo real. Analizamos vídeos de tu border collie, corregimos posiciones y trazamos líneas de entrenamiento de pastoreo personalizadas.",
     image: `${import.meta.env.BASE_URL}online.png`,
-    features: ["Video-análisis de pastoreo", "Sesiones para Border Collie", "Grabación de la sesión", "Plan de entrenamiento semanal"],
+    features: ["Video-análisis de pastoreo", "Clases Individualizadas", "Grabación de la sesión", "Plan de entrenamiento semanal"],
     quote: "Ayuda a tu perro para que en el futuro tu perro pueda ayudarte a ti."
   },
   {
@@ -370,7 +370,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.0.0</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.0.3</span></span>
           <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
