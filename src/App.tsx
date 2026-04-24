@@ -23,7 +23,10 @@ import {
   Mail,
   Phone,
   Send,
-  User as UserIcon
+  User as UserIcon,
+  Search,
+  RefreshCw,
+  Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -45,7 +48,7 @@ interface AlumnoData {
   classes: ClassItem[];
   online?: boolean;
   seminario?: boolean;
-  webinar?: boolean;
+  webminar?: boolean;
   material?: boolean;
   intensivo?: boolean;
   students?: any[];
@@ -189,6 +192,7 @@ export default function App() {
     const sessionData = { ...data, _auth: password };
     setUser(sessionData);
     sessionStorage.setItem("alumnoData", JSON.stringify(sessionData));
+    if (password) sessionStorage.setItem("temp_p", password);
     const isTeacher = data.user?.toUpperCase().includes("GALPA");
     if (isTeacher) {
       setView("teacher");
@@ -400,7 +404,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.2.1</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.5.3</span></span>
           <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -1083,21 +1087,100 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData, pass?:
 
 function TeacherDashboard({ user, onLogout, onRefresh }: { user: AlumnoData; onLogout: () => void; onRefresh: () => void }) {
   const [activeInnerTab, setActiveInnerTab] = useState<"students" | "messages">("students");
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
   const [teacherView, setTeacherView] = useState<TeacherViewState>({ mode: "list", selectedStudent: null });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("Todos");
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const students = user.students || [];
+  useEffect(() => {
+    if (!user.students || user.students.length === 0) {
+      onRefresh();
+    }
+  }, []);
+
+  // Ensure names are trimmed for matching and properties are sanitized
+  const students = (user.students || []).map(s => ({
+    ...s,
+    user: (s.user || "").trim(),
+    pass: (s.pass || "").trim(),
+    classes: s.classes || []
+  }));
   
   const filteredStudents = students.filter(student => {
-    const matchesSearch = student.user.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "Todos" || (student.classes && student.classes.some((c: any) => c.tipo === selectedType));
-    return matchesSearch && matchesType;
+    const studentName = student.user.toLowerCase();
+    const search = (searchTerm || "").toLowerCase().trim();
+    const matchesSearch = !search || studentName.includes(search);
+    
+    // Si buscamos por "Todos", entran todos los alumnos autorizados
+    if (selectedType === "Todos") return matchesSearch;
+
+    // Si buscamos por programa, comprobamos si tiene la suscripción activa O si tiene clases de ese tipo
+    const subKey = selectedType.toLowerCase().split(' ')[0];
+    const isSubscribed = student[subKey] === true;
+    const hasTypeClasses = student.classes && student.classes.some((c: any) => {
+        const classType = (c.tipo || "").trim().toLowerCase();
+        const targetType = selectedType.trim().toLowerCase();
+        return classType === targetType || classType.includes(targetType);
+    });
+    
+    return matchesSearch && (isSubscribed || hasTypeClasses);
   });
+
+  const handleCreateStudent = async () => {
+    const name = prompt("Nombre del nuevo alumno:");
+    if (!name) return;
+    const pass = prompt("Contraseña:");
+    if (!pass) return;
+
+    setIsUpdating(true);
+    try {
+      await fetch(`${LOGIN_SCRIPT_URL}?action=adminCreateStudent&user=${encodeURIComponent(name)}&pass=${encodeURIComponent(pass)}`, { method: "POST" });
+      onRefresh();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateStudent = async (student: any, updates: any) => {
+    setIsUpdating(true);
+    const updated = { ...student, ...updates };
+    const params = new URLSearchParams({
+      action: "adminUpdateStudent",
+      rowId: updated.rowId,
+      user: updated.user,
+      pass: updated.pass,
+      activo: updated.activo ? "SI" : "NO",
+      email: updated.email || "",
+      online: updated.online ? "SI" : "NO",
+      seminario: updated.seminario ? "SI" : "NO",
+      webminar: updated.webminar ? "SI" : "NO",
+      material: updated.material ? "SI" : "NO",
+      intensivo: updated.intensivo ? "SI" : "NO"
+    });
+
+    try {
+      await fetch(`${LOGIN_SCRIPT_URL}?${params.toString()}`, { method: "POST" });
+      onRefresh();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteStudent = async (student: any) => {
+    if (!confirm(`¿Estás seguro de que quieres borrar a ${student.user}?`)) return;
+    setIsUpdating(true);
+    try {
+      await fetch(`${LOGIN_SCRIPT_URL}?action=adminDeleteStudent&rowId=${student.rowId}`, { method: "POST" });
+      onRefresh();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (activeInnerTab === "students" && teacherView.mode === "student-detail" && teacherView.selectedStudent) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-brand-bg flex flex-col">
         <TeacherNav activeTab={activeInnerTab} onTabChange={setActiveInnerTab} onLogout={onLogout} />
         <TeacherStudentDetail 
           student={teacherView.selectedStudent} 
@@ -1109,138 +1192,278 @@ function TeacherDashboard({ user, onLogout, onRefresh }: { user: AlumnoData; onL
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-brand-bg flex flex-col">
       <TeacherNav activeTab={activeInnerTab} onTabChange={setActiveInnerTab} onLogout={onLogout} />
       
       {activeInnerTab === "students" ? (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex-1 flex flex-col bg-brand-bg"
+          className="flex-1 flex flex-col"
         >
-          {/* Header Panel */}
-          <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
-            <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
-              <div className="space-y-4 text-center md:text-left">
-                <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
-                    Panel de <span className="serif text-brand-accent">Gestión Académica</span>
+          {/* Header Panel Principal */}
+          <div className="px-6 md:px-12 py-10 md:py-16 border-b border-brand-border bg-white relative overflow-hidden">
+            <div className="max-w-7xl mx-auto relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
+              <div className="space-y-4">
+                <div className="flex gap-4 mb-2">
+                   <button 
+                    onClick={() => setViewMode("cards")}
+                    className={`text-[9px] px-4 py-1.5 rounded-lg border font-black tracking-widest uppercase transition-all ${viewMode === "cards" ? "bg-brand-accent text-white border-brand-accent" : "bg-white text-brand-ink/40 border-brand-border"}`}
+                   >
+                     Vista Expedientes
+                   </button>
+                   <button 
+                    onClick={() => setViewMode("list")}
+                    className={`text-[9px] px-4 py-1.5 rounded-lg border font-black tracking-widest uppercase transition-all ${viewMode === "list" ? "bg-brand-accent text-white border-brand-accent" : "bg-white text-brand-ink/40 border-brand-border"}`}
+                   >
+                     Vista Directorio
+                   </button>
+                </div>
+                <h1 className="text-4xl md:text-6xl font-light tracking-tighter leading-none text-brand-ink uppercase">
+                    Gestión de <span className="serif text-brand-accent italic">{viewMode === "cards" ? "Expedientes" : "Cuentas"}</span>
                 </h1>
-                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
-                  Instructor Principal GALPA
-                </p>
+                <div className="flex items-center gap-3">
+                   <div className="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></div>
+                   <p className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-ink/40">
+                     Instructor: {user.user}
+                   </p>
+                </div>
               </div>
               
-              <div className="flex flex-wrap gap-3 justify-center md:justify-end">
-                {["Todos", ...CLASS_TYPES].map(type => (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedType(type)}
-                    className={`px-4 py-2 rounded-full text-[9px] uppercase tracking-widest font-bold border transition-all ${
-                      selectedType === type 
-                      ? "bg-brand-accent border-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" 
-                      : "bg-brand-accent/5 border-brand-border text-brand-ink/40 hover:border-brand-accent/30 shadow-sm"
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-4 items-end">
+                <button 
+                  onClick={handleCreateStudent}
+                  disabled={isUpdating}
+                  className="flex items-center gap-2 px-6 py-3 bg-brand-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nuevo Alumno
+                </button>
+                <div className="flex flex-wrap gap-2 bg-brand-bg p-1.5 rounded-2xl border border-brand-border">
+                  {["Todos", ...CLASS_TYPES].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedType(type)}
+                      className={`px-4 py-2.5 rounded-xl text-[9px] uppercase tracking-widest font-black transition-all ${
+                        selectedType === type 
+                        ? "bg-brand-ink text-white shadow-lg" 
+                        : "text-brand-ink/40 hover:text-brand-accent hover:bg-white"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="px-12 py-8 bg-white border-b border-brand-border">
-            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-center">
-              <div className="relative flex-1 group">
-                <Users className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ink/20 group-focus-within:text-brand-accent transition-colors" />
+          <div className="px-6 md:px-12 py-6 bg-white/50 backdrop-blur-sm border-b border-brand-border sticky top-20 z-40">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 group w-full">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ink/20 group-focus-within:text-brand-accent transition-colors" />
                 <input 
                   type="text" 
-                  placeholder="Buscar alumno..." 
+                  placeholder="Escribe el nombre del alumno para buscar..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-14 pr-8 py-5 bg-brand-bg/50 border border-brand-border rounded-xl text-sm focus:outline-none focus:border-brand-accent transition-all font-light"
+                  className="w-full pl-14 pr-8 py-5 bg-white border border-brand-border rounded-2xl text-sm focus:outline-none focus:border-brand-accent transition-all font-light shadow-sm"
                 />
+              </div>
+              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end px-4">
+                 <button 
+                    onClick={onRefresh}
+                    disabled={isUpdating}
+                    className="flex items-center gap-2 text-[9px] uppercase tracking-widest font-black text-brand-accent hover:opacity-70 transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isUpdating ? "animate-spin" : ""}`} />
+                    Actualizar
+                  </button>
+                  <div className="h-4 w-px bg-brand-border hidden md:block"></div>
+                  <span className="text-[10px] uppercase tracking-widest font-black text-brand-ink/30 italic">
+                    {filteredStudents.length} {filteredStudents.length === 1 ? 'Alumno' : 'Alumnos'}
+                  </span>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 max-w-7xl mx-auto px-12 py-16 w-full">
-            <div className="space-y-12">
-              <div className="flex items-center justify-between border-b border-brand-border pb-6">
-                 <h2 className="text-xl font-light tracking-tight flex items-center gap-3 text-brand-ink">
-                   <Users className="w-5 h-5 text-brand-accent" />
-                   Alumnos en <span className="text-brand-accent italic serif">{selectedType}</span>
-                 </h2>
-                 <div className="flex items-center gap-6">
-                    <button 
-                      onClick={onRefresh}
-                      className="text-[9px] uppercase tracking-widest font-bold text-brand-ink/30 hover:text-brand-accent transition-colors"
-                    >
-                      Actualizar Datos
-                    </button>
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/20">
-                      {filteredStudents.length} Alumno{filteredStudents.length !== 1 ? 's' : ''}
-                    </span>
+          <div className="flex-1 max-w-7xl mx-auto px-6 md:px-12 py-12 w-full">
+            {filteredStudents.length === 0 ? (
+              <div className="py-32 text-center border-2 border-dashed border-brand-border rounded-3xl bg-white/50 flex flex-col items-center gap-6">
+                 <div className="w-16 h-16 bg-brand-accent/5 rounded-full flex items-center justify-center text-brand-accent/20">
+                    <Users className="w-8 h-8" />
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-[0.3em] font-black text-brand-ink/40">Sin resultados</p>
+                    <p className="text-xs text-brand-ink/20 font-light">No hay alumnos que coincidan con la búsqueda.</p>
                  </div>
               </div>
+            ) : viewMode === "cards" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
+                    {filteredStudents.map((student, idx) => {
+                  // Detectar suscripciones basadas en las clases que tiene (TRIMMED)
+                  const subTypes = ["Online", "Seminario", "Webminar", "Material Exclusivo", "Curso Cuatrimestral"].filter(type => 
+                    student.classes && student.classes.some((c: any) => (c.tipo || "").trim().toLowerCase() === type.toLowerCase())
+                  );
 
-              {filteredStudents.length === 0 ? (
-                <div className="py-20 text-center border border-dashed border-brand-border rounded-2xl bg-white shadow-sm">
-                   <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-ink/30">No hay alumnos registrados con estos criterios</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredStudents.map((student, idx) => (
+                  return (
                     <motion.div 
                       key={idx}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
+                      transition={{ delay: idx * 0.03 }}
                       onClick={() => setTeacherView({ mode: "student-detail", selectedStudent: student })}
-                      className="bg-white border border-brand-border p-8 rounded-xl hover:border-brand-accent/40 transition-all group cursor-pointer relative overflow-hidden shadow-sm hover:shadow-xl"
+                      className="group bg-white border border-brand-border p-8 rounded-[32px] hover:border-brand-accent transition-all cursor-pointer relative overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-brand-accent/5"
                     >
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-accent/5 rounded-full blur-2xl translate-x-12 -translate-y-12 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="flex justify-between items-start mb-6 relative z-10">
-                        <div className="w-12 h-12 bg-brand-bg rounded-lg border border-brand-border flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Users className="w-5 h-5 text-brand-accent" />
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-accent/5 rounded-full blur-3xl translate-x-12 -translate-y-12 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      
+                      <div className="flex justify-between items-start mb-8 relative z-10">
+                        <div className="w-14 h-14 bg-brand-bg rounded-2xl border border-brand-border flex items-center justify-center group-hover:bg-brand-accent group-hover:border-brand-accent transition-all duration-500">
+                          <UserIcon className="w-6 h-6 text-brand-ink/20 group-hover:text-white transition-colors" />
                         </div>
                         <div className="text-right">
-                          <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Totales</span>
-                          <span className="text-xl font-light text-brand-accent">{student.classes?.length || 0}</span>
+                          <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases</span>
+                          <span className="text-2xl font-light text-brand-accent">{student.classes?.length || 0}</span>
                         </div>
                       </div>
-                      <div className="relative z-10">
-                        <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors text-brand-ink">{student.user}</h3>
-                        <div className="flex flex-wrap gap-1 mt-2 mb-6">
-                            {["online", "seminario", "webinar", "material", "intensivo"].map(sub => (
-                                student[sub] && (
-                                    <span key={sub} className="text-[6px] uppercase tracking-tighter px-1.5 py-0.5 bg-brand-accent/10 text-brand-accent font-black rounded">
-                                        {sub}
-                                    </span>
-                                )
-                            ))}
-                            {!["online", "seminario", "webinar", "material", "intensivo"].some(s => student[s]) && (
-                                <span className="text-[6px] uppercase tracking-tighter px-1.5 py-0.5 bg-brand-ink/5 text-brand-ink/40 font-black rounded">
-                                    Sin suscripciones activas
+
+                      <div className="relative z-10 space-y-4">
+                        <div>
+                          <h3 className="text-2xl font-light tracking-tight group-hover:text-brand-accent transition-colors text-brand-ink mb-1 uppercase">{student.user}</h3>
+                          <div className="flex items-center gap-2">
+                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                             <span className="text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Sincronizado</span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 min-h-[20px]">
+                            {subTypes.length > 0 ? (
+                              subTypes.map(type => (
+                                <span key={type} className="text-[7px] uppercase tracking-tighter px-2 py-0.5 bg-brand-accent/10 text-brand-accent font-black rounded border border-brand-accent/20">
+                                    {type}
                                 </span>
+                              ))
+                            ) : (
+                              <span className="text-[7px] uppercase tracking-tighter px-2 py-0.5 bg-brand-ink/5 text-brand-ink/30 font-black rounded border border-brand-border">
+                                Sin registros de programa
+                              </span>
                             )}
                         </div>
                       </div>
-                      <div className="space-y-4 border-t border-brand-border pt-6 relative z-10">
-                         {student.classes?.slice(0, 2).map((c: any, cIdx: number) => (
-                           <div key={cIdx} className="flex items-center gap-2">
-                              <Play className="w-1.5 h-1.5 text-brand-accent" />
-                              <span className="text-[9px] uppercase tracking-widest font-medium text-brand-ink/60 truncate">{c.titulo}</span>
-                           </div>
-                         ))}
-                         {(!student.classes || student.classes.length === 0) && (
-                             <p className="text-[8px] uppercase tracking-widest font-bold text-brand-ink/20 italic">Sin clases registradas</p>
-                         )}
+
+                      <div className="mt-8 pt-6 border-t border-brand-border relative z-10 flex justify-between items-center">
+                         <div className="space-y-1">
+                            {student.classes && student.classes.length > 0 ? (
+                               <div className="flex items-center gap-2">
+                                  <Play className="w-2 h-2 text-brand-accent" />
+                                  <span className="text-[9px] font-bold text-brand-ink/60 italic truncate max-w-[120px]">
+                                    {student.classes[student.classes.length - 1].titulo}
+                                  </span>
+                               </div>
+                            ) : (
+                              <span className="text-[8px] uppercase tracking-widest font-black text-brand-ink/10 italic">Sin clases</span>
+                            )}
+                         </div>
+                         <div className="flex items-center gap-1 group-hover:gap-3 transition-all">
+                            <span className="text-[9px] uppercase tracking-widest font-black text-brand-ink/30 group-hover:text-brand-accent">EXPEDIENTE</span>
+                            <ChevronRight className="w-4 h-4 text-brand-ink/20 group-hover:text-brand-accent" />
+                         </div>
                       </div>
                     </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white border border-brand-border rounded-[32px] overflow-hidden shadow-sm">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-brand-bg/50 border-b border-brand-border">
+                      <th className="px-8 py-6 text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">Usuario / Contraseña</th>
+                      <th className="px-8 py-6 text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">Estado</th>
+                      <th className="px-8 py-6 text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40 text-center">Programas Activos</th>
+                      <th className="px-8 py-6 text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-border">
+                    {filteredStudents.map((student, idx) => {
+                      return (
+                        <tr key={idx} className="hover:bg-brand-bg/30 transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="space-y-2">
+                               <input 
+                                  value={student.user} 
+                                  onChange={(e) => handleUpdateStudent(student, { user: e.target.value })}
+                                  className="text-sm font-black text-brand-ink uppercase bg-transparent border-b border-transparent focus:border-brand-accent outline-none w-full"
+                               />
+                               <div className="flex items-center gap-2">
+                                 <code className="text-[10px] font-mono text-brand-accent opacity-50">PASS:</code>
+                                 <input 
+                                    value={student.pass || ""} 
+                                    onChange={(e) => handleUpdateStudent(student, { pass: e.target.value })}
+                                    className="text-xs bg-brand-bg px-2 py-0.5 rounded border border-brand-border text-brand-accent outline-none focus:border-brand-accent w-full"
+                                 />
+                               </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <button 
+                              onClick={() => handleUpdateStudent(student, { activo: !student.activo })}
+                              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 text-[10px] uppercase font-black transition-all ${
+                                student.activo 
+                                ? "bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm" 
+                                : "bg-red-50 border-red-500 text-red-600 opacity-50"
+                              }`}
+                            >
+                               <div className={`w-2 h-2 rounded-full ${student.activo ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`}></div>
+                               {student.activo ? "Activo" : "Pausado"}
+                            </button>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex flex-wrap justify-center gap-2 max-w-[400px] mx-auto">
+                               {[
+                                 { key: "online", label: "Online" },
+                                 { key: "seminario", label: "Seminario" },
+                                 { key: "webminar", label: "Webminar" },
+                                 { key: "material", label: "Material Exclusivo" },
+                                 { key: "intensivo", label: "Cuatrimestral" }
+                               ].map(prog => (
+                                 <button
+                                   key={prog.key}
+                                   onClick={() => handleUpdateStudent(student, { [prog.key]: !student[prog.key] })}
+                                   className={`px-3 py-2 rounded-lg border text-[8px] font-black transition-all flex items-center justify-center uppercase tracking-widest ${
+                                     student[prog.key] 
+                                     ? "bg-brand-accent border-brand-accent text-white shadow-sm" 
+                                     : "bg-white border-brand-border text-brand-ink/20 hover:border-brand-accent/30"
+                                   }`}
+                                 >
+                                   {prog.label}
+                                 </button>
+                               ))}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                             <div className="flex justify-end gap-4">
+                                <button 
+                                  onClick={() => setTeacherView({ mode: "student-detail", selectedStudent: student })}
+                                  className="text-[9px] uppercase font-black text-brand-accent hover:underline flex items-center gap-1"
+                                >
+                                  Expediente
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteStudent(student)}
+                                  className="text-[9px] uppercase font-black text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                >
+                                  Borrar
+                                </button>
+                             </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </motion.div>
       ) : (
@@ -1358,7 +1581,7 @@ function ManageMessages() {
         <div className="py-20 text-center text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/20 animate-pulse italic">Cargando bandeja de entrada...</div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {messages.slice().reverse().map((msg, idx) => (
+          {(messages || []).slice().reverse().map((msg, idx) => (
             <div key={idx} className={`p-8 bg-white border rounded-3xl transition-all shadow-sm flex flex-col md:flex-row gap-8 items-start ${msg.respuesta ? "border-brand-border/40 opacity-70" : "border-brand-accent shadow-brand-accent/5 ring-1 ring-brand-accent"}`}>
               <div className="shrink-0 w-32">
                 <div className="w-12 h-12 bg-brand-bg rounded-2xl flex items-center justify-center mb-3">
@@ -1498,7 +1721,7 @@ function TeacherStudentDetail({ student, onBack, onRefresh }: { student: any; on
         )}
 
         <div className="space-y-24">
-          {student.classes.slice().reverse().map((clase: ClassItem, idx: number) => (
+          {(student.classes || []).slice().reverse().map((clase: ClassItem, idx: number) => (
              <TeacherClassCard 
                key={clase.id || idx} 
                clase={clase} 
@@ -1732,9 +1955,9 @@ function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogo
   const tabs = [
     { id: "Online", label: "Online", enabled: isTeacher || targetUser.online === true, userSubscribed: targetUser.online === true },
     { id: "Seminario", label: "Seminario", enabled: isTeacher || targetUser.seminario === true, userSubscribed: targetUser.seminario === true },
-    { id: "Webminar", label: "Webminar", enabled: isTeacher || targetUser.webinar === true, userSubscribed: targetUser.webinar === true },
-    { id: "Material Exclusivo", label: "Material Exclusivo", enabled: isTeacher || targetUser.material === true, userSubscribed: targetUser.material === true },
-    { id: "Curso Cuatrimestral", label: "Curso Cuatrimestral", enabled: isTeacher || targetUser.intensivo === true, userSubscribed: targetUser.intensivo === true },
+    { id: "Webminar", label: "Webinar", enabled: isTeacher || targetUser.webinar === true, userSubscribed: targetUser.webinar === true },
+    { id: "Material Exclusivo", label: "Material", enabled: isTeacher || targetUser.material === true, userSubscribed: targetUser.material === true },
+    { id: "Curso Cuatrimestral", label: "Intensivo", enabled: isTeacher || targetUser.intensivo === true, userSubscribed: targetUser.intensivo === true },
   ];
 
   const activeTabData = tabs.find(t => t.id === activeTab);
@@ -1995,7 +2218,7 @@ function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogo
                   <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-ink/20">No se han encontrado registros en esta sección</p>
                 </div>
               ) : (
-                filteredClasses.slice().reverse().map((clase: any, idx: number) => {
+                (filteredClasses || []).slice().reverse().map((clase: any, idx: number) => {
                   const studentContext = isTeacher && selectedStudent ? selectedStudent.user : user.user;
                   const classesArray = isTeacher && selectedStudent ? selectedStudent.classes : user.classes;
                   const originalIdx = classesArray.findIndex((c: any) => c.id === clase.id);
@@ -2066,7 +2289,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName, isTeacher
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 md:gap-12 items-start"
+      className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 md:gap-12 items-start bg-white/30 p-4 md:p-0 rounded-3xl md:rounded-none border border-brand-border md:border-none"
     >
       {/* Video Side */}
       <div className="space-y-6">
