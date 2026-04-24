@@ -43,6 +43,11 @@ interface AlumnoData {
   success: boolean;
   user: string;
   classes: ClassItem[];
+  online?: boolean;
+  seminario?: boolean;
+  webminar?: boolean;
+  materialExclusivo?: boolean;
+  cursoCuatrimestral?: boolean;
   students?: any[]; // Added for teacher role
   message?: string;
 }
@@ -73,10 +78,10 @@ const DATA_SCRIPT_URL = SCRIPT_URL;
 
 const CLASS_TYPES = [
   "Online",
-  "Seminarios Fin de semana",
+  "Seminario",
   "Webminar",
-  "Acceso a material temático exclusivo alumnos",
-  "Curso Intensivo cuatrimestral"
+  "Material Exclusivo",
+  "Curso Cuatrimestral"
 ];
 
 const SERVICES: ServiceInfo[] = [
@@ -359,10 +364,35 @@ export default function App() {
             />
           )}
           {view === "dashboard" && user && (
-            <DashboardView user={user} onLogout={handleLogout} />
+            <DashboardView 
+              user={user} 
+              onLogout={handleLogout} 
+              onContact={(source) => {
+                setContactSource(source);
+                setView("contact");
+              }}
+            />
           )}
           {view === "teacher" && user && (
-            <TeacherDashboard onLogout={handleLogout} />
+            <TeacherDashboard 
+              user={user} 
+              onLogout={handleLogout}
+              onRefresh={async () => {
+                const savedPass = sessionStorage.getItem("temp_p");
+                if (savedPass && user.user) {
+                  try {
+                    const resp = await fetch(`${LOGIN_SCRIPT_URL}?action=getAllData&user=${encodeURIComponent(user.user)}&pass=${encodeURIComponent(savedPass)}`);
+                    const data = await resp.json();
+                    if (data.success) {
+                      setUser(data);
+                      sessionStorage.setItem("alumnoData", JSON.stringify(data));
+                    }
+                  } catch (e) {
+                    console.error("Refresh error:", e);
+                  }
+                }
+              }}
+            />
           )}
         </AnimatePresence>
       </main>
@@ -370,7 +400,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.0.3</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.2.1</span></span>
           <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -780,6 +810,153 @@ function ContactView({ source, onBack }: { source: string; onBack: () => void })
   );
 }
 
+// --- Internal Message Modal ---
+
+interface InternalMessage {
+  id?: number;
+  user: string;
+  mensaje: string;
+  respuesta?: string;
+  fecha?: string;
+}
+
+function InternalMessageModal({ isOpen, onClose, userName }: { isOpen: boolean; onClose: () => void; userName: string }) {
+  const [message, setMessage] = useState("");
+  const [history, setHistory] = useState<InternalMessage[]>([]);
+  const [status, setStatus] = useState<"idle" | "sending" | "loading" | "success" | "error">("idle");
+
+  const fetchHistory = async () => {
+    setStatus("loading");
+    try {
+      const url = `${SCRIPT_URL}?action=getInternalMessages&user=${encodeURIComponent(userName)}`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      if (data.success) {
+        setHistory(data.messages || []);
+      }
+      setStatus("idle");
+    } catch (err) {
+      console.error("Error fetching history:", err);
+      setStatus("error");
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchHistory();
+    }
+  }, [isOpen]);
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    setStatus("sending");
+
+    try {
+      const url = `${SCRIPT_URL}?action=submitInternalMessage&user=${encodeURIComponent(userName)}&mensaje=${encodeURIComponent(message)}`;
+      await fetch(url, { method: "POST" });
+      setStatus("success");
+      setMessage("");
+      // Refresh history after sending
+      await fetchHistory();
+      setTimeout(() => setStatus("idle"), 2000);
+    } catch (err) {
+      console.error("Error sending internal message:", err);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2000);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-brand-ink/40 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white w-full max-w-2xl h-[90vh] md:h-[80vh] rounded-3xl overflow-hidden shadow-2xl border border-brand-border flex flex-col"
+      >
+        {/* Header */}
+        <div className="p-8 border-b border-brand-border flex justify-between items-center shrink-0">
+          <div className="space-y-1">
+            <h3 className="text-3xl font-light tracking-tight text-brand-ink uppercase italic serif">Mis <span className="text-brand-accent not-italic font-sans">Mensajes</span></h3>
+            <p className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-ink/30">Conversación directa con Cristóbal</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-brand-accent/5 rounded-full transition-colors">
+            <X className="w-5 h-5 text-brand-ink/40" />
+          </button>
+        </div>
+
+        {/* Chat History */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-brand-bg/10">
+          {status === "loading" && history.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-[10px] uppercase tracking-widest font-bold text-brand-ink/20">Cargando historial...</div>
+          ) : history.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-30">
+              <MessageSquare className="w-8 h-8" />
+              <p className="text-[10px] uppercase tracking-[0.3em] font-bold">No hay mensajes previos</p>
+            </div>
+          ) : (
+            history.map((msg, idx) => (
+              <div key={idx} className="space-y-4">
+                {/* User Message */}
+                <div className="flex justify-end">
+                  <div className="max-w-[80%] bg-brand-ink text-white p-5 rounded-2xl rounded-tr-none shadow-sm relative">
+                    <p className="text-sm font-light leading-relaxed">{msg.mensaje}</p>
+                    <span className="block text-[8px] mt-2 opacity-40 uppercase tracking-widest">{msg.fecha || "Reciente"}</span>
+                  </div>
+                </div>
+                
+                {/* Teacher Response */}
+                {msg.respuesta && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] bg-white border border-brand-border p-5 rounded-2xl rounded-tl-none shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-brand-accent"></div>
+                        <span className="text-[8px] uppercase tracking-[0.2em] font-black text-brand-accent">Respuesta de Cristóbal</span>
+                      </div>
+                      <p className="text-sm font-light text-brand-ink/80 leading-relaxed italic">{msg.respuesta}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="p-8 border-t border-brand-border bg-white shrink-0">
+          <div className="space-y-4">
+            <div className="relative">
+              <textarea 
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Hola Cristobal, tengo una duda sobre..."
+                className="w-full bg-brand-bg/30 border border-brand-border rounded-xl p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-ink/70 min-h-[100px]"
+              />
+              <button 
+                onClick={handleSend}
+                disabled={status === "sending" || !message.trim()}
+                className={`
+                  absolute bottom-4 right-4 p-4 rounded-lg transition-all flex items-center justify-center
+                  ${status === "success" ? "bg-emerald-500 text-white" : "bg-brand-accent text-brand-bg hover:scale-105 active:scale-95 disabled:opacity-50"}
+                `}
+              >
+                {status === "sending" ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : status === "success" ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // --- View: Login ---
 
 function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData, pass?: string) => void; onBack: () => void }) {
@@ -904,184 +1081,322 @@ function LoginView({ onSuccess, onBack }: { onSuccess: (data: AlumnoData, pass?:
 
 // --- View: Teacher Dashboard ---
 
-function TeacherDashboard({ onLogout }: { onLogout: () => void }) {
-  const [selectedType, setSelectedType] = useState("Todos");
-  const [allStudents, setAllStudents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false); // No cargando por defecto si ya tenemos datos
+function TeacherDashboard({ user, onLogout, onRefresh }: { user: AlumnoData; onLogout: () => void; onRefresh: () => void }) {
+  const [activeInnerTab, setActiveInnerTab] = useState<"students" | "messages">("students");
   const [teacherView, setTeacherView] = useState<TeacherViewState>({ mode: "list", selectedStudent: null });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("Todos");
 
-  const fetchStudents = async () => {
-    setLoading(true);
-    const savedData = sessionStorage.getItem("alumnoData");
-    if (!savedData) return;
-    
-    const parsed = JSON.parse(savedData);
-    const userParam = parsed.user;
-    const passParam = parsed._auth || "@Joker2026";
-    
-    try {
-      const response = await fetch(`${LOGIN_SCRIPT_URL}?action=getAllData&user=${encodeURIComponent(userParam)}&pass=${encodeURIComponent(passParam)}`);
-      const data = await response.json();
+  const students = user.students || [];
+  
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.user.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === "Todos" || student.classes.some((c: any) => c.tipo === selectedType);
+    return matchesSearch && matchesType;
+  });
+
+  if (activeInnerTab === "students" && teacherView.mode === "student-detail" && teacherView.selectedStudent) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <TeacherNav activeTab={activeInnerTab} onTabChange={setActiveInnerTab} onLogout={onLogout} />
+        <TeacherStudentDetail 
+          student={teacherView.selectedStudent} 
+          onBack={() => setTeacherView({ mode: "list", selectedStudent: null })}
+          onRefresh={onRefresh}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <TeacherNav activeTab={activeInnerTab} onTabChange={setActiveInnerTab} onLogout={onLogout} />
       
+      {activeInnerTab === "students" ? (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex-1 flex flex-col bg-brand-bg"
+        >
+          {/* Header Panel */}
+          <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
+            <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
+              <div className="space-y-4 text-center md:text-left">
+                <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
+                    Panel de <span className="serif text-brand-accent">Gestión Académica</span>
+                </h1>
+                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
+                  Instructor Principal GALPA
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap gap-3 justify-center md:justify-end">
+                {["Todos", ...CLASS_TYPES].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedType(type)}
+                    className={`px-4 py-2 rounded-full text-[9px] uppercase tracking-widest font-bold border transition-all ${
+                      selectedType === type 
+                      ? "bg-brand-accent border-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" 
+                      : "bg-brand-accent/5 border-brand-border text-brand-ink/40 hover:border-brand-accent/30 shadow-sm"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="px-12 py-8 bg-white border-b border-brand-border">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6 items-center">
+              <div className="relative flex-1 group">
+                <Users className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-ink/20 group-focus-within:text-brand-accent transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Buscar alumno..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-14 pr-8 py-5 bg-brand-bg/50 border border-brand-border rounded-xl text-sm focus:outline-none focus:border-brand-accent transition-all font-light"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 max-w-7xl mx-auto px-12 py-16 w-full">
+            <div className="space-y-12">
+              <div className="flex items-center justify-between border-b border-brand-border pb-6">
+                 <h2 className="text-xl font-light tracking-tight flex items-center gap-3 text-brand-ink">
+                   <Users className="w-5 h-5 text-brand-accent" />
+                   Alumnos en <span className="text-brand-accent italic serif">{selectedType}</span>
+                 </h2>
+                 <div className="flex items-center gap-6">
+                    <button 
+                      onClick={onRefresh}
+                      className="text-[9px] uppercase tracking-widest font-bold text-brand-ink/30 hover:text-brand-accent transition-colors"
+                    >
+                      Actualizar Datos
+                    </button>
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/20">
+                      {filteredStudents.length} Alumno{filteredStudents.length !== 1 ? 's' : ''}
+                    </span>
+                 </div>
+              </div>
+
+              {filteredStudents.length === 0 ? (
+                <div className="py-20 text-center border border-dashed border-brand-border rounded-2xl bg-white shadow-sm">
+                   <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-ink/30">No hay alumnos registrados con estos criterios</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredStudents.map((student, idx) => (
+                    <motion.div 
+                      key={idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      onClick={() => setTeacherView({ mode: "student-detail", selectedStudent: student })}
+                      className="bg-white border border-brand-border p-8 rounded-xl hover:border-brand-accent/40 transition-all group cursor-pointer relative overflow-hidden shadow-sm hover:shadow-xl"
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-accent/5 rounded-full blur-2xl translate-x-12 -translate-y-12 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="flex justify-between items-start mb-6 relative z-10">
+                        <div className="w-12 h-12 bg-brand-bg rounded-lg border border-brand-border flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Users className="w-5 h-5 text-brand-accent" />
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Totales</span>
+                          <span className="text-xl font-light text-brand-accent">{student.classes.length}</span>
+                        </div>
+                      </div>
+                      <div className="relative z-10">
+                        <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors text-brand-ink">{student.user}</h3>
+                        <p className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/30 mb-6">Ver expediente completo</p>
+                      </div>
+                      <div className="space-y-4 border-t border-brand-border pt-6 relative z-10">
+                         {student.classes.slice(0, 2).map((c: any, cIdx: number) => (
+                           <div key={cIdx} className="flex items-center gap-2">
+                              <Play className="w-1.5 h-1.5 text-brand-accent" />
+                              <span className="text-[9px] uppercase tracking-widest font-medium text-brand-ink/60 truncate">{c.titulo}</span>
+                           </div>
+                         ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <ManageMessages />
+      )}
+    </div>
+  );
+}
+
+function TeacherNav({ activeTab, onTabChange, onLogout }: { activeTab: string; onTabChange: (tab: any) => void; onLogout: () => void }) {
+  return (
+    <nav className="h-20 border-b border-brand-border px-12 flex items-center justify-between sticky top-0 bg-white z-50">
+      <div className="flex items-center gap-12">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-brand-ink rounded-lg flex items-center justify-center">
+            <Award className="w-5 h-5 text-brand-bg" />
+          </div>
+          <div>
+            <span className="block text-[11px] uppercase tracking-[0.3em] font-black text-brand-ink">GALPA CAMPUS</span>
+            <span className="block text-[8px] uppercase tracking-widest font-bold text-brand-accent italic">Panel de Instructor</span>
+          </div>
+        </div>
+
+        <div className="h-8 w-px bg-brand-border"></div>
+
+        <div className="flex gap-2">
+            <button 
+              onClick={() => onTabChange("students")}
+              className={`px-6 py-2 rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold transition-all flex items-center gap-3 ${activeTab === "students" ? "bg-brand-ink text-white" : "text-brand-ink/40 hover:bg-brand-accent/5 hover:text-brand-accent"}`}
+            >
+              <Users className="w-4 h-4" />
+              Alumnos
+            </button>
+            <button 
+              onClick={() => onTabChange("messages")}
+              className={`px-6 py-2 rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold transition-all flex items-center gap-3 ${activeTab === "messages" ? "bg-brand-ink text-white" : "text-brand-ink/40 hover:bg-brand-accent/5 hover:text-brand-accent"}`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Mensajes Recibidos
+            </button>
+        </div>
+      </div>
+
+      <button 
+        onClick={onLogout}
+        className="flex items-center gap-3 px-6 py-2 rounded-lg border border-brand-border text-[9px] uppercase tracking-[0.2em] font-bold text-brand-ink/60 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all group"
+      >
+        <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Desconexión
+      </button>
+    </nav>
+  );
+}
+
+function ManageMessages() {
+  const [messages, setMessages] = useState<InternalMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [respondingTo, setRespondingTo] = useState<InternalMessage | null>(null);
+  const [responseText, setResponseText] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "success">("idle");
+
+  const fetchAllMessages = async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch(`${SCRIPT_URL}?action=getAllMessages`);
+      const data = await resp.json();
       if (data.success) {
-        setAllStudents(data.students || []);
-        // Actualizar caché
-        parsed.students = data.students;
-        sessionStorage.setItem("alumnoData", JSON.stringify(parsed));
-      } else {
-        console.error("Fetch students error:", data.message);
-        if (parsed.students) setAllStudents(parsed.students);
+        setMessages(data.messages || []);
       }
+      setLoading(false);
     } catch (err) {
-      console.error("Error fetching students:", err);
-      // Si falla el fetch pero tenemos caché, la usamos
-      if (parsed.students) setAllStudents(parsed.students);
-    } finally {
+      console.error("Error fetching all messages:", err);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const savedData = sessionStorage.getItem("alumnoData");
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      if (parsed.students) {
-        setAllStudents(parsed.students);
-      } else {
-        fetchStudents();
-      }
-    }
+    fetchAllMessages();
   }, []);
 
-  const filteredStudents = allStudents.filter(student => {
-    if (selectedType === "Todos") return true;
-    return student.classes.some((c: any) => c.tipo === selectedType);
-  });
-
-  if (teacherView.mode === "student-detail" && teacherView.selectedStudent) {
-    return (
-      <TeacherStudentDetail 
-        student={teacherView.selectedStudent} 
-        onBack={() => setTeacherView({ mode: "list", selectedStudent: null })}
-        onRefresh={fetchStudents}
-      />
-    );
-  }
+  const handleRespond = async () => {
+    if (!respondingTo || !responseText.trim()) return;
+    setStatus("saving");
+    try {
+      const url = `${SCRIPT_URL}?action=respondInternalMessage&user=${encodeURIComponent(respondingTo.user)}&mensaje=${encodeURIComponent(respondingTo.mensaje)}&respuesta=${encodeURIComponent(responseText)}`;
+      await fetch(url, { method: "POST" });
+      setStatus("success");
+      setResponseText("");
+      setRespondingTo(null);
+      await fetchAllMessages();
+      setTimeout(() => setStatus("idle"), 2000);
+    } catch (err) {
+      console.error("Error responding:", err);
+      setStatus("idle");
+    }
+  };
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex-1 flex flex-col bg-brand-bg"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex-1 max-w-7xl mx-auto w-full px-12 py-16 space-y-12"
     >
-      {/* Header Panel */}
-      <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
-          <div className="space-y-4 text-center md:text-left">
-            <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
-                Panel de <span className="serif text-brand-accent">Gestión Académica</span>
-            </h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
-              Instructor Principal GALPA
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap gap-3 justify-center md:justify-end">
-            {["Todos", ...CLASS_TYPES].map(type => (
-              <button
-                key={type}
-                onClick={() => setSelectedType(type)}
-                className={`px-4 py-2 rounded-full text-[9px] uppercase tracking-widest font-bold border transition-all ${
-                  selectedType === type 
-                  ? "bg-brand-accent border-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" 
-                  : "bg-brand-accent/5 border-brand-border text-brand-ink/40 hover:border-brand-accent/30 shadow-sm"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
+      <div className="flex justify-between items-end">
+        <div className="space-y-4">
+          <h2 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">Gestión de <span className="serif text-brand-accent italic">Consultas</span></h2>
+          <p className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-ink/30 italic">Responde a las dudas directas de tus alumnos</p>
         </div>
+        <button onClick={fetchAllMessages} className="p-4 rounded-xl bg-white border border-brand-border hover:bg-brand-accent/5 transition-all group">
+          <Play className="w-3 h-3 text-brand-ink/20 group-hover:text-brand-accent rotate-90 transition-colors" />
+        </button>
       </div>
 
-      <div className="flex-1 max-w-7xl mx-auto px-12 py-16 w-full">
-        {loading && allStudents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-40 gap-4">
-            <div className="w-12 h-12 border-2 border-brand-accent/30 border-t-brand-accent rounded-full animate-spin"></div>
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-accent/60">Cargando base de datos...</span>
-          </div>
-        ) : (
-          <div className="space-y-12">
-            <div className="flex items-center justify-between border-b border-brand-border pb-6">
-               <h2 className="text-xl font-light tracking-tight flex items-center gap-3 text-brand-ink">
-                 <Users className="w-5 h-5 text-brand-accent" />
-                 Alumnos en <span className="text-brand-accent italic serif">{selectedType}</span>
-               </h2>
-               <div className="flex items-center gap-6">
-                  <button 
-                    onClick={fetchStudents}
-                    className="text-[9px] uppercase tracking-widest font-bold text-brand-ink/30 hover:text-brand-accent transition-colors"
-                  >
-                    Actualizar Datos
-                  </button>
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/20">
-                    {filteredStudents.length} Alumno{filteredStudents.length !== 1 ? 's' : ''}
-                  </span>
-               </div>
+      {loading ? (
+        <div className="py-20 text-center text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/20 animate-pulse italic">Cargando bandeja de entrada...</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          {messages.slice().reverse().map((msg, idx) => (
+            <div key={idx} className={`p-8 bg-white border rounded-3xl transition-all shadow-sm flex flex-col md:flex-row gap-8 items-start ${msg.respuesta ? "border-brand-border/40 opacity-70" : "border-brand-accent shadow-brand-accent/5 ring-1 ring-brand-accent"}`}>
+              <div className="shrink-0 w-32">
+                <div className="w-12 h-12 bg-brand-bg rounded-2xl flex items-center justify-center mb-3">
+                  <UserIcon className="w-5 h-5 text-brand-ink/20" />
+                </div>
+                <span className="block text-[11px] font-black text-brand-ink uppercase tracking-wider">{msg.user}</span>
+                <span className="block text-[8px] text-brand-ink/30 font-bold uppercase tracking-widest mt-1">{msg.fecha}</span>
+              </div>
+
+              <div className="flex-1 space-y-6">
+                <div className="space-y-2">
+                  <span className="text-[9px] uppercase tracking-[0.3em] font-black text-brand-accent">Consulta del alumno:</span>
+                  <p className="text-base text-brand-ink/80 font-light leading-relaxed">{msg.mensaje}</p>
+                </div>
+
+                {msg.respuesta ? (
+                  <div className="p-6 bg-brand-bg rounded-xl border border-brand-border/40">
+                    <span className="text-[9px] uppercase tracking-[0.3em] font-black text-brand-ink/30 mb-2 block">Tu respuesta:</span>
+                    <p className="text-sm italic text-brand-ink/60 font-light">{msg.respuesta}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <textarea 
+                      value={respondingTo?.user === msg.user && respondingTo?.mensaje === msg.mensaje ? responseText : ""}
+                      onChange={(e) => {
+                        setRespondingTo(msg);
+                        setResponseText(e.target.value);
+                      }}
+                      onFocus={() => setRespondingTo(msg)}
+                      placeholder="Escribe tu respuesta aquí..."
+                      className="w-full bg-brand-surface border border-brand-border rounded-xl p-5 text-sm focus:border-brand-accent transition-all resize-none h-24 font-light"
+                    />
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={handleRespond}
+                        disabled={status === "saving" || !responseText.trim() || respondingTo?.user !== msg.user}
+                        className="px-10 py-4 bg-brand-accent text-brand-bg rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold hover:scale-105 transition-all shadow-xl shadow-brand-accent/20"
+                      >
+                        {status === "saving" && respondingTo?.user === msg.user ? "Enviando..." : "Enviar Respuesta"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {filteredStudents.length === 0 ? (
-              <div className="py-20 text-center border border-dashed border-brand-border rounded-2xl bg-white shadow-sm">
-                 <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-ink/30">No hay alumnos registrados en esta categoría</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredStudents.map((student, idx) => (
-                  <motion.div 
-                    key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    onClick={() => setTeacherView({ mode: "student-detail", selectedStudent: student })}
-                    className="bg-white border border-brand-border p-8 rounded-xl hover:border-brand-accent/40 transition-all group cursor-pointer relative overflow-hidden shadow-sm hover:shadow-xl"
-                  >
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-accent/5 rounded-full blur-2xl translate-x-12 -translate-y-12 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                      <div className="w-12 h-12 bg-brand-bg rounded-lg border border-brand-border flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Users className="w-5 h-5 text-brand-accent" />
-                      </div>
-                      <div className="text-right">
-                        <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Totales</span>
-                        <span className="text-xl font-light text-brand-accent">{student.classes.length}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="relative z-10">
-                      <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors text-brand-ink">{student.user}</h3>
-                      <p className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/30 mb-6">Ver expediente completo</p>
-                    </div>
-                    
-                    <div className="space-y-4 border-t border-brand-border pt-6 relative z-10">
-                       {student.classes.filter((c: any) => selectedType === "Todos" || c.tipo === selectedType).slice(0, 2).map((c: any, cIdx: number) => (
-                         <div key={cIdx} className="flex items-center gap-3">
-                            <Play className="w-2 h-2 text-brand-accent" />
-                            <span className="text-[9px] uppercase tracking-widest font-medium text-brand-ink/60 truncate">{c.titulo}</span>
-                         </div>
-                       ))}
-                       {student.classes.filter((c: any) => selectedType === "Todos" || c.tipo === selectedType).length > 2 && (
-                         <p className="text-[8px] uppercase tracking-widest font-bold text-brand-accent italic">
-                            + {student.classes.filter((c: any) => selectedType === "Todos" || c.tipo === selectedType).length - 2} clases más
-                         </p>
-                       )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          ))}
+          {messages.length === 0 && (
+            <div className="py-32 text-center border-2 border-dashed border-brand-border rounded-[40px] bg-brand-bg/20">
+               <MessageSquare className="w-10 h-10 text-brand-ink/10 mx-auto mb-6" />
+               <p className="text-[11px] uppercase tracking-[0.3em] font-black text-brand-ink/20">No se han recibido consultas todavía</p>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -1278,7 +1593,7 @@ const AddNewClassForm = ({ studentName, onSuccess }: { studentName: string; onSu
     titulo: "",
     videoUrl: "",
     fecha: new Date().toISOString().split('T')[0],
-    tipo: "Online",
+    tipo: CLASS_TYPES[0],
     notas: ""
   });
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
@@ -1317,7 +1632,7 @@ const AddNewClassForm = ({ studentName, onSuccess }: { studentName: string; onSu
           <span className="text-[10px] uppercase tracking-widest font-black text-brand-ink/20">Destinatario: {studentName}</span>
        </div>
        
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div className="space-y-3">
              <label className="text-[9px] uppercase tracking-widest font-black text-brand-ink/40">Título de la Sesión</label>
              <input 
@@ -1339,6 +1654,18 @@ const AddNewClassForm = ({ studentName, onSuccess }: { studentName: string; onSu
                className="w-full bg-white border border-brand-border rounded-lg p-4 text-sm focus:border-brand-accent text-brand-ink outline-none shadow-sm"
                placeholder="https://www.youtube.com/watch?v=..."
              />
+          </div>
+          <div className="space-y-3">
+             <label className="text-[9px] uppercase tracking-widest font-black text-brand-ink/40">Categoría / Programa</label>
+             <select 
+               value={formData.tipo}
+               onChange={e => setFormData({...formData, tipo: e.target.value})}
+               className="w-full bg-white border border-brand-border rounded-lg p-4 text-sm focus:border-brand-accent text-brand-ink outline-none shadow-sm"
+             >
+                {CLASS_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+             </select>
           </div>
        </div>
 
@@ -1366,60 +1693,163 @@ const AddNewClassForm = ({ studentName, onSuccess }: { studentName: string; onSu
 
 // --- View: Dashboard ---
 
-function DashboardView({ user, onLogout }: { user: AlumnoData; onLogout: () => void }) {
+function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogout: () => void; onContact: (source: string) => void }) {
+  const [activeTab, setActiveTab] = useState<string>("Online");
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+
+  const isTeacher = user.user.toUpperCase().includes("GALPA");
+
+  const tabs = [
+    { id: "Online", label: "Online", enabled: isTeacher || user.online === true },
+    { id: "Seminario", label: "Seminario", enabled: isTeacher || user.seminario === true },
+    { id: "Webminar", label: "Webminar", enabled: isTeacher || user.webminar === true },
+    { id: "Material Exclusivo", label: "Material Exclusivo", enabled: isTeacher || user.materialExclusivo === true },
+    { id: "Curso Cuatrimestral", label: "Curso Cuatrimestral", enabled: isTeacher || user.cursoCuatrimestral === true },
+  ];
+
+  const activeTabData = tabs.find(t => t.id === activeTab);
+  const isSubscribed = activeTabData?.enabled;
+
+  const filteredClasses = user.classes.filter(c => {
+    if (activeTab === "Online") return c.tipo === "Online" || !c.tipo;
+    return c.tipo === activeTab;
+  });
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex-1 flex flex-col bg-brand-bg"
+      className="h-[calc(100vh-80px)] flex flex-col bg-brand-bg overflow-hidden"
     >
-      {/* Header Panel */}
-      <div className="px-12 py-20 border-b border-brand-border bg-brand-accent/[0.03] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-accent/5 rounded-full blur-[100px] translate-x-20 -translate-y-20"></div>
-        
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end gap-10 relative z-10">
-          <div className="space-y-4">
-            <h1 className="text-6xl font-light tracking-tighter leading-[0.9] text-brand-ink">
-                Centro de <br/>
-                <span className="serif text-brand-accent">Aprendizaje</span>
-            </h1>
-            <div className="flex items-center gap-3 py-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-accent shadow-[0_0_8px_var(--color-brand-accent)]"></div>
-                <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
-                  Panel de Alumno: <span className="text-brand-ink font-bold">{user.user}</span>
-                </p>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar Panel - Fixed */}
+        <aside className="w-72 border-r border-brand-border bg-white flex flex-col pt-12 shrink-0">
+          <div className="px-8 mb-12">
+            <h2 className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-ink/30 mb-6">Mis Programas</h2>
+            <nav className="space-y-4">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-between group ${
+                    activeTab === tab.id 
+                    ? (tab.enabled ? "bg-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" : "bg-brand-ink/10 text-brand-ink/40 shadow-none")
+                    : (tab.enabled ? "text-brand-ink/40 hover:bg-brand-accent/5 hover:text-brand-accent" : "text-brand-ink/20 hover:text-brand-ink/30 grayscale contrast-50")
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {tab.label}
+                    <span className={`text-[7px] px-1.5 py-0.5 rounded italic transition-colors ${
+                      tab.enabled 
+                      ? (activeTab === tab.id ? "bg-white/20 text-white" : "bg-brand-accent/10 text-brand-accent") 
+                      : "bg-brand-ink/5 text-brand-ink/40 opacity-60"
+                    }`}>
+                      {tab.enabled ? "Suscrito" : "No suscrito"}
+                    </span>
+                  </span>
+                  <ChevronRight className={`w-3 h-3 transition-transform ${activeTab === tab.id ? "translate-x-1" : "opacity-0 group-hover:opacity-100"}`} />
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="px-8 mt-auto mb-10">
+            <button 
+              onClick={() => setIsMessageModalOpen(true)}
+              className="w-full bg-brand-ink text-white py-4 rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 hover:bg-brand-accent transition-all shadow-xl"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Mis Mensajes
+            </button>
+          </div>
+        </aside>
+
+        {/* Messaging Modal */}
+        <InternalMessageModal 
+          isOpen={isMessageModalOpen} 
+          onClose={() => setIsMessageModalOpen(false)} 
+          userName={user.user} 
+        />
+
+        {/* Main Content Area - Scrollable */}
+        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+          {/* Header Panel */}
+          <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.02] relative overflow-hidden shrink-0">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-end gap-10 relative z-10">
+              <div className="space-y-4">
+                <h1 className="text-5xl font-light tracking-tighter leading-[0.9] text-brand-ink uppercase">
+                    Centro de <br/>
+                    <span className="serif text-brand-accent italic">Aprendizaje</span>
+                </h1>
+                <div className="flex items-center gap-3 py-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-accent"></div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
+                      Panel de Alumno: <span className="text-brand-ink font-bold">{user.user}</span>
+                    </p>
+                </div>
+              </div>
+
+              <div className="flex gap-12 border-l border-brand-border pl-12 h-16 items-center">
+                <div className="space-y-1">
+                    <span className="block text-2xl font-light leading-none text-brand-accent">
+                      {isSubscribed ? filteredClasses.length : "--"}
+                    </span>
+                    <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">{activeTab} Registradas</span>
+                </div>
+                <div className="space-y-1">
+                    <span className="block text-2xl font-light leading-none text-blue-600">AA</span>
+                    <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Calificación</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-12 border-l border-brand-border pl-12 h-20 items-center">
-             <div className="space-y-1">
-                <span className="block text-[32px] font-light leading-none text-brand-accent">{user.classes.length}</span>
-                <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Registradas</span>
-             </div>
-             <div className="space-y-1">
-                <span className="block text-[32px] font-light leading-none text-blue-600">AA</span>
-                <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Calificación Promedio</span>
-             </div>
+          <div className="flex-1 max-w-5xl mx-auto px-12 py-16 w-full grid grid-cols-1 gap-16">
+              <div className="pb-8 border-b border-brand-border flex items-center justify-between">
+                <h3 className="text-[12px] uppercase tracking-[0.4em] font-black text-brand-ink/60">Contenido: {activeTab}</h3>
+                <div className="flex items-center gap-2 text-[9px] font-bold text-brand-ink/20">
+                   {isSubscribed ? "ORDEN: RECIENTES PRIMERO" : "ACCESO RESTRINGIDO"}
+                </div>
+              </div>
+
+              {!isSubscribed ? (
+                <div className="w-full py-40 border-2 border-dashed border-brand-border bg-white rounded-3xl flex flex-col items-center justify-center gap-10 shadow-sm text-center px-10">
+                  <div className="w-20 h-20 bg-brand-ink/5 rounded-full flex items-center justify-center">
+                    <Info className="w-10 h-10 text-brand-ink/20" />
+                  </div>
+                  <div className="space-y-4 max-w-md">
+                    <p className="text-[11px] uppercase tracking-[0.4em] font-black text-brand-ink/40">No estás suscrito a esta formación</p>
+                    <p className="text-sm text-brand-ink/60 font-light leading-relaxed italic">
+                      "Ponte en contacto con tu profesor si quieres suscribirte a esta formación."
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => onContact(`Consulta sobre suscripción: ${activeTab}`)}
+                    className="px-10 py-4 bg-brand-accent text-brand-bg rounded-lg text-[9px] uppercase tracking-[0.3em] font-bold hover:scale-105 transition-transform shadow-xl shadow-brand-accent/20"
+                  >
+                    Contactar ahora
+                  </button>
+                </div>
+              ) : filteredClasses.length === 0 ? (
+                <div className="w-full py-40 border border-brand-border bg-white rounded-2xl flex flex-col items-center justify-center gap-6 shadow-sm">
+                  <Info className="w-8 h-8 text-brand-ink/10" />
+                  <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-ink/20">No se han encontrado registros en esta sección</p>
+                </div>
+              ) : (
+                filteredClasses.slice().reverse().map((clase, idx) => {
+                  const originalIdx = user.classes.findIndex(c => c.id === clase.id);
+                  return (
+                    <ClassCard 
+                      key={clase.id || idx} 
+                      clase={clase} 
+                      index={originalIdx} 
+                      userName={user.user} 
+                    />
+                  );
+                })
+              )}
           </div>
         </div>
-      </div>
-
-      <div className="flex-1 max-w-7xl mx-auto px-12 py-20 w-full grid grid-cols-1 gap-20">
-          {user.classes.length === 0 ? (
-            <div className="w-full py-40 border border-brand-border bg-white rounded-2xl flex flex-col items-center justify-center gap-6 shadow-sm">
-              <Info className="w-8 h-8 text-brand-ink/10" />
-              <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-ink/20">No se han encontrado registros de clases</p>
-            </div>
-          ) : (
-            user.classes.slice().reverse().map((clase, idx) => (
-              <ClassCard 
-                key={user.classes.length - 1 - idx} 
-                clase={clase} 
-                index={user.classes.length - 1 - idx} 
-                userName={user.user} 
-              />
-            ))
-          )}
       </div>
     </motion.div>
   );
