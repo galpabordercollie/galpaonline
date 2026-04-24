@@ -423,7 +423,7 @@ export default function App() {
       {/* Footer */}
       <footer className="px-12 py-8 border-t border-brand-border flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] font-medium text-brand-ink/30">
         <div className="flex gap-8">
-          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.6.3</span></span>
+          <span>GALPA © 2026 <span className="ml-2 font-mono text-brand-ink/40">v1.7.0</span></span>
           <span className="text-brand-ink/10 hidden md:block">|</span>
           <span>Sheepdog Specialization Campus</span>
         </div>
@@ -1434,7 +1434,7 @@ function TeacherDashboard({ user, onLogout, onRefresh }: { user: AlumnoData; onL
                                  { key: "seminario", label: "Seminario" },
                                  { key: "webminar", label: "Webminar" },
                                  { key: "material", label: "Material Exclusivo" },
-                                 { key: "intensivo", label: "Cuatrimestral" }
+                                 { key: "intensivo", label: "Curso Cuatrimestral" }
                                ].map(prog => (
                                  <button
                                    key={prog.key}
@@ -1762,7 +1762,7 @@ const TeacherClassCard: React.FC<TeacherClassCardProps> = ({ clase, studentName,
     setStatus("saving");
 
     try {
-      await fetch(`${DATA_SCRIPT_URL}?action=updateTeacherNotas&alumno=${encodeURIComponent(String(studentName || "").trim())}&rowId=${clase.id}&notas=${encodeURIComponent(t)}`);
+      await fetch(`${DATA_SCRIPT_URL}?action=updateTeacherNotas&alumno=${encodeURIComponent(String(studentName || "").trim())}&videoUrl=${encodeURIComponent(clase.video)}&notas=${encodeURIComponent(t)}`);
       
       setStatus("success");
       onUpdate();
@@ -1978,7 +1978,7 @@ function DashboardView({ user, onLogout, onContact, onRefresh }: { user: AlumnoD
     { id: "Seminario", label: "Seminario", enabled: isTeacher || targetUser.seminario === true, userSubscribed: targetUser.seminario === true },
     { id: "Webminar", label: "Webinar", enabled: isTeacher || targetUser.webminar === true, userSubscribed: targetUser.webminar === true },
     { id: "Material Exclusivo", label: "Material", enabled: isTeacher || targetUser.material === true, userSubscribed: targetUser.material === true },
-    { id: "Curso Cuatrimestral", label: "Intensivo", enabled: isTeacher || targetUser.intensivo === true, userSubscribed: targetUser.intensivo === true },
+    { id: "Curso Cuatrimestral", label: "Curso Cuatrimestral", enabled: isTeacher || targetUser.intensivo === true, userSubscribed: targetUser.intensivo === true },
   ];
 
   const activeTabData = tabs.find(t => t.id === activeTab);
@@ -2262,7 +2262,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName, isTeacher
     if (!c) return;
     setStatus("saving");
     try {
-      const url = `${DATA_SCRIPT_URL}?action=updateAlumnoNotas&alumno=${encodeURIComponent(u)}&rowId=${clase.id}&notasAlumno=${encodeURIComponent(c)}`;
+      const url = `${DATA_SCRIPT_URL}?action=updateAlumnoNotas&alumno=${encodeURIComponent(u)}&videoUrl=${encodeURIComponent(clase.video)}&notasAlumno=${encodeURIComponent(c)}`;
       await fetch(url);
       setStatus("success");
       if (onUpdate) onUpdate();
@@ -2279,7 +2279,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName, isTeacher
     if (!t) return;
     setStatus("saving");
     try {
-      const url = `${DATA_SCRIPT_URL}?action=updateTeacherNotas&alumno=${encodeURIComponent(u)}&rowId=${clase.id}&notas=${encodeURIComponent(t)}`;
+      const url = `${DATA_SCRIPT_URL}?action=updateTeacherNotas&alumno=${encodeURIComponent(u)}&videoUrl=${encodeURIComponent(clase.video)}&notas=${encodeURIComponent(t)}`;
       await fetch(url);
       setStatus("success");
       if (onUpdate) onUpdate();
@@ -2326,7 +2326,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName, isTeacher
       <div className="space-y-8 md:space-y-10 border-l-0 md:border-l border-brand-border md:pl-12 h-full flex flex-col justify-between">
         <div className="space-y-6">
             <h3 className="text-3xl md:text-4xl font-light tracking-tight leading-none uppercase text-brand-ink font-sans">
-              {clase.clase || 'Clase Magistral'}
+              {clase.clase || 'Video-Clase Corregida'}
             </h3>
             
             <div className="space-y-3">
