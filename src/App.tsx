@@ -45,11 +45,12 @@ interface AlumnoData {
   classes: ClassItem[];
   online?: boolean;
   seminario?: boolean;
-  webminar?: boolean;
-  materialExclusivo?: boolean;
-  cursoCuatrimestral?: boolean;
-  students?: any[]; // Added for teacher role
+  webinar?: boolean;
+  material?: boolean;
+  intensivo?: boolean;
+  students?: any[];
   message?: string;
+  _auth?: string;
 }
 
 type ViewState = "landing" | "login" | "dashboard" | "teacher" | "service-detail" | "contact";
@@ -185,7 +186,6 @@ export default function App() {
   }, []);
 
   const handleLoginSuccess = (data: AlumnoData, password?: string) => {
-    // Inject password for session refreshes
     const sessionData = { ...data, _auth: password };
     setUser(sessionData);
     sessionStorage.setItem("alumnoData", JSON.stringify(sessionData));
@@ -1091,7 +1091,7 @@ function TeacherDashboard({ user, onLogout, onRefresh }: { user: AlumnoData; onL
   
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.user.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "Todos" || student.classes.some((c: any) => c.tipo === selectedType);
+    const matchesType = selectedType === "Todos" || (student.classes && student.classes.some((c: any) => c.tipo === selectedType));
     return matchesSearch && matchesType;
   });
 
@@ -1205,20 +1205,36 @@ function TeacherDashboard({ user, onLogout, onRefresh }: { user: AlumnoData; onL
                         </div>
                         <div className="text-right">
                           <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Clases Totales</span>
-                          <span className="text-xl font-light text-brand-accent">{student.classes.length}</span>
+                          <span className="text-xl font-light text-brand-accent">{student.classes?.length || 0}</span>
                         </div>
                       </div>
                       <div className="relative z-10">
                         <h3 className="text-lg font-medium mb-1 group-hover:text-brand-accent transition-colors text-brand-ink">{student.user}</h3>
-                        <p className="text-[10px] uppercase tracking-widest font-bold text-brand-ink/30 mb-6">Ver expediente completo</p>
+                        <div className="flex flex-wrap gap-1 mt-2 mb-6">
+                            {["online", "seminario", "webinar", "material", "intensivo"].map(sub => (
+                                student[sub] && (
+                                    <span key={sub} className="text-[6px] uppercase tracking-tighter px-1.5 py-0.5 bg-brand-accent/10 text-brand-accent font-black rounded">
+                                        {sub}
+                                    </span>
+                                )
+                            ))}
+                            {!["online", "seminario", "webinar", "material", "intensivo"].some(s => student[s]) && (
+                                <span className="text-[6px] uppercase tracking-tighter px-1.5 py-0.5 bg-brand-ink/5 text-brand-ink/40 font-black rounded">
+                                    Sin suscripciones activas
+                                </span>
+                            )}
+                        </div>
                       </div>
                       <div className="space-y-4 border-t border-brand-border pt-6 relative z-10">
-                         {student.classes.slice(0, 2).map((c: any, cIdx: number) => (
+                         {student.classes?.slice(0, 2).map((c: any, cIdx: number) => (
                            <div key={cIdx} className="flex items-center gap-2">
                               <Play className="w-1.5 h-1.5 text-brand-accent" />
                               <span className="text-[9px] uppercase tracking-widest font-medium text-brand-ink/60 truncate">{c.titulo}</span>
                            </div>
                          ))}
+                         {(!student.classes || student.classes.length === 0) && (
+                             <p className="text-[8px] uppercase tracking-widest font-bold text-brand-ink/20 italic">Sin clases registradas</p>
+                         )}
                       </div>
                     </motion.div>
                   ))}
@@ -1428,13 +1444,24 @@ function TeacherStudentDetail({ student, onBack, onRefresh }: { student: any; on
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
             <div className="space-y-4">
-            <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
-                Expediente: <span className="serif text-brand-accent">{student.user}</span>
-            </h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40 italic">
-              Modo Edición: Feedback de Instructor Activo
-            </p>
-          </div>
+              <h1 className="text-5xl font-light tracking-tighter leading-none text-brand-ink">
+                  Expediente: <span className="serif text-brand-accent">{student.user}</span>
+              </h1>
+              <div className="flex flex-wrap gap-2">
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40 italic mr-4">
+                    Modo Edición: Feedback de Instructor Activo
+                  </span>
+                  {["online", "seminario", "webinar", "material", "intensivo"].map(sub => (
+                      <span key={sub} className={`text-[8px] uppercase tracking-widest px-2 py-0.5 rounded font-black border ${
+                          student[sub] 
+                          ? "bg-brand-accent/20 text-brand-accent border-brand-accent/30" 
+                          : "bg-brand-ink/5 text-brand-ink/20 border-brand-border"
+                      }`}>
+                          {sub}: {student[sub] ? "Suscrito" : "No"}
+                      </span>
+                  ))}
+              </div>
+            </div>
           
           <div className="flex gap-4">
             <button
@@ -1696,21 +1723,54 @@ const AddNewClassForm = ({ studentName, onSuccess }: { studentName: string; onSu
 function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogout: () => void; onContact: (source: string) => void }) {
   const [activeTab, setActiveTab] = useState<string>("Online");
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   const isTeacher = user.user.toUpperCase().includes("GALPA");
 
+  const targetUser = (isTeacher && selectedStudent) ? selectedStudent : user;
   const tabs = [
-    { id: "Online", label: "Online", enabled: isTeacher || user.online === true },
-    { id: "Seminario", label: "Seminario", enabled: isTeacher || user.seminario === true },
-    { id: "Webminar", label: "Webminar", enabled: isTeacher || user.webminar === true },
-    { id: "Material Exclusivo", label: "Material Exclusivo", enabled: isTeacher || user.materialExclusivo === true },
-    { id: "Curso Cuatrimestral", label: "Curso Cuatrimestral", enabled: isTeacher || user.cursoCuatrimestral === true },
+    { id: "Online", label: "Online", enabled: isTeacher || targetUser.online === true, userSubscribed: targetUser.online === true },
+    { id: "Seminario", label: "Seminario", enabled: isTeacher || targetUser.seminario === true, userSubscribed: targetUser.seminario === true },
+    { id: "Webminar", label: "Webminar", enabled: isTeacher || targetUser.webinar === true, userSubscribed: targetUser.webinar === true },
+    { id: "Material Exclusivo", label: "Material Exclusivo", enabled: isTeacher || targetUser.material === true, userSubscribed: targetUser.material === true },
+    { id: "Curso Cuatrimestral", label: "Curso Cuatrimestral", enabled: isTeacher || targetUser.intensivo === true, userSubscribed: targetUser.intensivo === true },
   ];
 
   const activeTabData = tabs.find(t => t.id === activeTab);
   const isSubscribed = activeTabData?.enabled;
 
-  const filteredClasses = user.classes.filter(c => {
+  const handleRefresh = async () => {
+    // If we have stored auth, we can refresh the data
+    const authPass = user._auth || sessionStorage.getItem("temp_p");
+    if (authPass) {
+      try {
+        const resp = await fetch(`${LOGIN_SCRIPT_URL}?action=getAllData&user=${encodeURIComponent(user.user)}&pass=${encodeURIComponent(authPass)}`);
+        const data = await resp.json();
+        if (data.success) {
+          // Update session and state
+          const newData = { ...data, _auth: authPass };
+          sessionStorage.setItem("alumnoData", JSON.stringify(newData));
+          
+          // Re-sync selected student if exists
+          if (selectedStudent && newData.students) {
+            const updatedStudent = newData.students.find((s: any) => s.user === selectedStudent.user);
+            if (updatedStudent) setSelectedStudent(updatedStudent);
+          }
+          
+          window.location.reload(); // Hard refresh to sync all components
+        }
+      } catch (e) {
+        console.error("Refresh error:", e);
+      }
+    }
+  };
+
+  const classesToShow = isTeacher 
+    ? (selectedStudent ? (selectedStudent.classes || []) : [])
+    : (user.classes || []);
+
+  const filteredClasses = classesToShow.filter((c: any) => {
     if (activeTab === "Online") return c.tipo === "Online" || !c.tipo;
     return c.tipo === activeTab;
   });
@@ -1719,18 +1779,36 @@ function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogo
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-[calc(100vh-80px)] flex flex-col bg-brand-bg overflow-hidden"
+      className="md:h-[calc(100vh-80px)] flex flex-col bg-brand-bg md:overflow-hidden relative"
     >
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar Panel - Fixed */}
-        <aside className="w-72 border-r border-brand-border bg-white flex flex-col pt-12 shrink-0">
-          <div className="px-8 mb-12">
-            <h2 className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-ink/30 mb-6">Mis Programas</h2>
-            <nav className="space-y-4">
+      {/* Mobile Top Header */}
+      <div className="md:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-brand-border sticky top-0 z-[60]">
+        <h2 className="text-[10px] uppercase tracking-widest font-black text-brand-ink/40">GALPA CAMPUS</h2>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 bg-brand-accent/5 rounded-lg text-brand-accent focus:outline-none"
+        >
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Sidebar Panel - Responsive Drawer */}
+        <aside className={`
+          fixed inset-y-0 left-0 z-[70] w-72 bg-white border-r border-brand-border flex flex-col pt-12 shrink-0 transition-transform duration-300 md:static md:translate-x-0
+          ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+          ${isMobileMenuOpen ? "top-[61px] md:top-0" : ""}
+        `}>
+          <div className="px-8 mb-8">
+            <h2 className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-ink/30 mb-6 font-sans">Contenido Disponible</h2>
+            <nav className="space-y-3">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+                  }}
                   className={`w-full text-left px-4 py-3 rounded-lg text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-between group ${
                     activeTab === tab.id 
                     ? (tab.enabled ? "bg-brand-accent text-brand-bg shadow-lg shadow-brand-accent/20" : "bg-brand-ink/10 text-brand-ink/40 shadow-none")
@@ -1740,29 +1818,72 @@ function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogo
                   <span className="flex items-center gap-2">
                     {tab.label}
                     <span className={`text-[7px] px-1.5 py-0.5 rounded italic transition-colors ${
-                      tab.enabled 
+                      tab.userSubscribed 
                       ? (activeTab === tab.id ? "bg-white/20 text-white" : "bg-brand-accent/10 text-brand-accent") 
                       : "bg-brand-ink/5 text-brand-ink/40 opacity-60"
                     }`}>
-                      {tab.enabled ? "Suscrito" : "No suscrito"}
+                      {tab.userSubscribed ? "Suscrito" : "No Suscrito"}
                     </span>
                   </span>
-                  <ChevronRight className={`w-3 h-3 transition-transform ${activeTab === tab.id ? "translate-x-1" : "opacity-0 group-hover:opacity-100"}`} />
+                  <ChevronRight className={`w-3 h-3 transition-transform ${activeTab === tab.id ? "translate-x-1" : "opacity-0 md:group-hover:opacity-100"}`} />
                 </button>
               ))}
             </nav>
           </div>
 
-          <div className="px-8 mt-auto mb-10">
-            <button 
-              onClick={() => setIsMessageModalOpen(true)}
-              className="w-full bg-brand-ink text-white py-4 rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 hover:bg-brand-accent transition-all shadow-xl"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Mis Mensajes
-            </button>
-          </div>
+              {isTeacher && (
+                <div className="px-8 mt-10 mb-10 overflow-hidden flex flex-col flex-1">
+                  <h2 className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-ink/30 mb-4 px-2 font-sans border-t border-brand-border pt-8">Mis Alumnos</h2>
+                  <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-2 pb-4">
+                    {(user.students || []).map((student: any) => {
+                      const subsCount = [student.online, student.seminario, student.webinar, student.material, student.intensivo].filter(Boolean).length;
+                      return (
+                        <button
+                          key={student.user}
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 rounded-lg transition-all border flex flex-col gap-1 ${
+                            selectedStudent?.user === student.user
+                            ? "bg-brand-ink text-white border-brand-ink shadow-md"
+                            : "bg-white text-brand-ink border-brand-border hover:border-brand-accent hover:text-brand-accent shadow-sm"
+                          }`}
+                        >
+                          <span className="text-[10px] uppercase tracking-widest font-bold">{student.user}</span>
+                          <span className={`text-[7px] uppercase tracking-widest font-black ${selectedStudent?.user === student.user ? "text-white/40" : "text-brand-ink/30"}`}>
+                            {subsCount} Suscripciones • {student.classes?.length || 0} Clases
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+          {!isTeacher && (
+            <div className="px-8 mt-auto mb-10">
+              <button 
+                onClick={() => {
+                  setIsMessageModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full bg-brand-ink text-white py-4 rounded-lg text-[9px] uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 hover:bg-brand-accent transition-all shadow-xl"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Mis Mensajes
+              </button>
+            </div>
+          )}
         </aside>
+
+        {/* Overlay for mobile drawer */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-brand-ink/60 backdrop-blur-sm z-[65] md:hidden mt-[61px]" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
 
         {/* Messaging Modal */}
         <InternalMessageModal 
@@ -1771,48 +1892,86 @@ function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogo
           userName={user.user} 
         />
 
-        {/* Main Content Area - Scrollable */}
-        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-brand-bg">
           {/* Header Panel */}
-          <div className="px-12 py-16 border-b border-brand-border bg-brand-accent/[0.02] relative overflow-hidden shrink-0">
-            <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-end gap-10 relative z-10">
+          <div className="px-6 md:px-12 py-12 md:py-16 border-b border-brand-border bg-brand-accent/[0.02] relative overflow-hidden shrink-0">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end gap-10 relative z-10">
               <div className="space-y-4">
-                <h1 className="text-5xl font-light tracking-tighter leading-[0.9] text-brand-ink uppercase">
-                    Centro de <br/>
+                <h1 className="text-3xl md:text-5xl font-light tracking-tighter leading-[0.9] text-brand-ink uppercase">
+                    Centro de <br className="hidden md:block" />
                     <span className="serif text-brand-accent italic">Aprendizaje</span>
                 </h1>
                 <div className="flex items-center gap-3 py-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-accent"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse"></div>
                     <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-ink/40">
-                      Panel de Alumno: <span className="text-brand-ink font-bold">{user.user}</span>
+                      {isTeacher ? "Panel Instructor" : "Panel de Alumno"}: <span className="text-brand-ink font-bold">{isTeacher ? (selectedStudent?.user || "GALPA") : user.user}</span>
                     </p>
                 </div>
               </div>
 
-              <div className="flex gap-12 border-l border-brand-border pl-12 h-16 items-center">
+              <div className="flex w-full md:w-auto justify-between md:justify-end gap-12 md:border-l border-brand-border md:pl-12 h-16 items-center">
                 <div className="space-y-1">
                     <span className="block text-2xl font-light leading-none text-brand-accent">
                       {isSubscribed ? filteredClasses.length : "--"}
                     </span>
-                    <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">{activeTab} Registradas</span>
+                    <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">{activeTab}</span>
                 </div>
-                <div className="space-y-1">
-                    <span className="block text-2xl font-light leading-none text-blue-600">AA</span>
-                    <span className="block text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Calificación</span>
-                </div>
+                {isTeacher && selectedStudent && (
+                  <button
+                    onClick={() => setSelectedStudent(null)}
+                    className="md:hidden p-3 bg-brand-ink text-white rounded-lg text-[8px] uppercase tracking-widest font-bold"
+                  >
+                    Cambiar Alumno
+                  </button>
+                )}
+                <button 
+                  onClick={handleRefresh}
+                  className="p-3 bg-brand-accent/10 rounded-lg text-brand-accent hover:bg-brand-accent hover:text-white transition-all shadow-sm"
+                  title="Actualizar Datos"
+                >
+                  <Calendar className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 max-w-5xl mx-auto px-12 py-16 w-full grid grid-cols-1 gap-16">
+          <div className="flex-1 max-w-5xl mx-auto px-6 md:px-12 py-10 md:py-16 pb-40 w-full flex flex-col gap-16 md:gap-24 overflow-y-auto overflow-x-hidden custom-scrollbar">
+              {isTeacher && selectedStudent && (
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/50 p-6 rounded-2xl border border-brand-border backdrop-blur-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-brand-bg" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest font-black text-brand-ink/40">Expediente Seleccionado</p>
+                      <h4 className="text-base font-bold text-brand-ink">{selectedStudent.user}</h4>
+                    </div>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-brand-accent">Instructor GALPA Activo</span>
+                </div>
+              )}
+
               <div className="pb-8 border-b border-brand-border flex items-center justify-between">
-                <h3 className="text-[12px] uppercase tracking-[0.4em] font-black text-brand-ink/60">Contenido: {activeTab}</h3>
-                <div className="flex items-center gap-2 text-[9px] font-bold text-brand-ink/20">
+                <h3 className="text-[10px] md:text-[12px] uppercase tracking-[0.4em] font-black text-brand-ink/60">Contenido: {activeTab}</h3>
+                <div className="hidden md:flex items-center gap-2 text-[9px] font-bold text-brand-ink/20 uppercase tracking-widest">
                    {isSubscribed ? "ORDEN: RECIENTES PRIMERO" : "ACCESO RESTRINGIDO"}
                 </div>
               </div>
 
-              {!isSubscribed ? (
+              {isTeacher && !selectedStudent ? (
+                <div className="w-full py-20 border-2 border-dashed border-brand-border bg-white rounded-3xl flex flex-col items-center justify-center gap-10 shadow-sm text-center px-10">
+                  <div className="w-20 h-20 bg-brand-ink/5 rounded-full flex items-center justify-center">
+                    <Users className="w-10 h-10 text-brand-ink/20" />
+                  </div>
+                  <div className="space-y-4 max-w-md">
+                    <p className="text-[11px] uppercase tracking-[0.4em] font-black text-brand-ink/40">Base de Datos de Alumnos</p>
+                    <p className="text-sm text-brand-ink/60 font-light leading-relaxed italic">
+                      "Selecciona un alumno del menú lateral para gestionar sus sesiones o añadir nuevas clases."
+                    </p>
+                  </div>
+                </div>
+              ) : !isSubscribed ? (
                 <div className="w-full py-40 border-2 border-dashed border-brand-border bg-white rounded-3xl flex flex-col items-center justify-center gap-10 shadow-sm text-center px-10">
                   <div className="w-20 h-20 bg-brand-ink/5 rounded-full flex items-center justify-center">
                     <Info className="w-10 h-10 text-brand-ink/20" />
@@ -1836,14 +1995,18 @@ function DashboardView({ user, onLogout, onContact }: { user: AlumnoData; onLogo
                   <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-ink/20">No se han encontrado registros en esta sección</p>
                 </div>
               ) : (
-                filteredClasses.slice().reverse().map((clase, idx) => {
-                  const originalIdx = user.classes.findIndex(c => c.id === clase.id);
+                filteredClasses.slice().reverse().map((clase: any, idx: number) => {
+                  const studentContext = isTeacher && selectedStudent ? selectedStudent.user : user.user;
+                  const classesArray = isTeacher && selectedStudent ? selectedStudent.classes : user.classes;
+                  const originalIdx = classesArray.findIndex((c: any) => c.id === clase.id);
                   return (
                     <ClassCard 
                       key={clase.id || idx} 
                       clase={clase} 
                       index={originalIdx} 
-                      userName={user.user} 
+                      userName={studentContext}
+                      isTeacher={isTeacher}
+                      onUpdate={handleRefresh}
                     />
                   );
                 })
@@ -1859,32 +2022,40 @@ interface ClassCardProps {
   clase: ClassItem;
   index: number;
   userName: string;
+  isTeacher?: boolean;
+  onUpdate?: () => void;
 }
 
-const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
+const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName, isTeacher, onUpdate }) => {
   const [comment, setComment] = useState(clase.notasAlumno || "");
+  const [teacherNotas, setTeacherNotas] = useState(clase.notas || "");
   const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
   const saveComment = async () => {
     if (!comment.trim()) return;
     setStatus("saving");
-
     try {
       const url = `${DATA_SCRIPT_URL}?action=updateAlumnoNotas&user=${encodeURIComponent(userName.trim())}&rowId=${clase.id}&notasAlumno=${encodeURIComponent(comment.trim())}`;
-      
       await fetch(url, { method: 'POST' });
-
-      const savedData = sessionStorage.getItem("alumnoData");
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        parsed.classes[index].notasAlumno = comment;
-        sessionStorage.setItem("alumnoData", JSON.stringify(parsed));
-      }
-
       setStatus("success");
+      if (onUpdate) onUpdate();
       setTimeout(() => setStatus("idle"), 3000);
     } catch (err) {
-      console.error("Save error:", err);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
+  };
+
+  const saveTeacherNotas = async () => {
+    if (!teacherNotas.trim()) return;
+    setStatus("saving");
+    try {
+      const url = `${DATA_SCRIPT_URL}?action=updateTeacherNotas&user=${encodeURIComponent(userName.trim())}&rowId=${clase.id}&notas=${encodeURIComponent(teacherNotas.trim())}`;
+      await fetch(url, { method: 'POST' });
+      setStatus("success");
+      if (onUpdate) onUpdate();
+      setTimeout(() => setStatus("idle"), 3000);
+    } catch (err) {
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
     }
@@ -1895,7 +2066,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 items-start"
+      className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 md:gap-12 items-start"
     >
       {/* Video Side */}
       <div className="space-y-6">
@@ -1911,59 +2082,87 @@ const ClassCard: React.FC<ClassCardProps> = ({ clase, index, userName }) => {
         </div>
         <div className="flex justify-between items-center px-4">
             <div className="flex items-center gap-4">
-                <span className="text-[10px] uppercase tracking-widest font-black text-brand-accent">{clase.tipo || 'ENTRENAMIENTO'}</span>
+                <span className="text-[9px] md:text-[10px] uppercase tracking-widest font-black text-brand-accent">{clase.tipo || 'ENTRENAMIENTO'}</span>
                 <span className="text-brand-ink/10 font-bold text-xs">/</span>
-                <span className="text-[10px] uppercase tracking-widest font-black text-brand-ink/30">{formatDate(clase.fecha)}</span>
+                <span className="text-[9px] md:text-[10px] uppercase tracking-widest font-black text-brand-ink/30 font-sans">{formatDate(clase.fecha)}</span>
             </div>
             <div className="flex items-center gap-2">
                 <Video className="w-3 h-3 text-brand-ink/20" />
-                <span className="text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Video-Análisis Activo</span>
+                <span className="text-[7px] md:text-[8px] uppercase tracking-widest font-black text-brand-ink/20">Video-Análisis Activo</span>
             </div>
         </div>
       </div>
 
       {/* Content Side */}
-      <div className="space-y-10 border-l border-brand-border pl-12 h-full flex flex-col justify-between">
+      <div className="space-y-8 md:space-y-10 border-l-0 md:border-l border-brand-border md:pl-12 h-full flex flex-col justify-between">
         <div className="space-y-6">
-            <h3 className="text-4xl font-light tracking-tight leading-none uppercase text-brand-ink">
+            <h3 className="text-3xl md:text-4xl font-light tracking-tight leading-none uppercase text-brand-ink font-sans">
               {clase.titulo || 'Clase Magistral'}
             </h3>
             
             <div className="space-y-3">
-                <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-accent">Feedback Técnico</h4>
-                <p className="text-sm text-brand-ink/60 leading-relaxed font-light italic border-l border-brand-accent/20 pl-6 py-2">
-                  "{clase.notas || 'Pendiente de revisión técnica.'}"
-                </p>
+                <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-accent font-sans">Feedback Técnico</h4>
+                {isTeacher ? (
+                  <div className="space-y-3">
+                    <textarea 
+                        value={teacherNotas}
+                        onChange={(e) => setTeacherNotas(e.target.value)}
+                        className="w-full bg-white border border-brand-border rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-ink/70 min-h-[100px] shadow-sm italic"
+                        placeholder="Escribe tu análisis técnico aquí..."
+                    />
+                    <button 
+                        onClick={saveTeacherNotas}
+                        disabled={status === "saving" || teacherNotas === clase.notas}
+                        className="w-full py-3 bg-brand-accent/10 text-brand-accent border border-brand-accent/20 rounded-lg text-[8px] uppercase tracking-widest font-black hover:bg-brand-accent hover:text-white transition-all"
+                    >
+                      {status === "saving" ? "Guardando..." : "Actualizar Feedback Profesor"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-brand-ink/60 leading-relaxed font-light italic border-l border-brand-accent/20 pl-6 py-2">
+                    "{clase.notas || 'Pendiente de revisión técnica.'}"
+                  </p>
+                )}
             </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pt-6 md:pt-0">
             <div className="space-y-4">
-                <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-ink/30">Anotaciones del Alumno</h4>
-                <textarea 
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    disabled={status === "saving"}
-                    className="w-full bg-white border border-brand-border rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-ink/70 min-h-[120px] shadow-sm"
-                    placeholder="Reflexiones sobre la sesión..."
-                />
+                <h4 className="text-[9px] uppercase tracking-[0.2em] font-black text-brand-ink/30 font-sans">Anotaciones del Alumno</h4>
+                {isTeacher ? (
+                   <div className="bg-brand-accent/5 border border-brand-border rounded-lg p-5">
+                      <p className="text-xs text-brand-ink/60 leading-relaxed font-light">
+                        {clase.notasAlumno || "El alumno aún no ha realizado anotaciones."}
+                      </p>
+                   </div>
+                ) : (
+                  <textarea 
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      disabled={status === "saving"}
+                      className="w-full bg-white border border-brand-border rounded-lg p-5 text-sm focus:outline-none focus:border-brand-accent transition-all resize-none font-light text-brand-ink/70 min-h-[120px] shadow-sm"
+                      placeholder="Reflexiones sobre la sesión..."
+                  />
+                )}
             </div>
             
-            <button 
-                onClick={saveComment}
-                disabled={status === "saving" || !comment.trim() || comment === clase.notasAlumno}
-                className={`
-                    w-full py-4 rounded-lg font-bold text-[9px] uppercase tracking-[0.3em] transition-all
-                    ${status === "success" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : 
-                    status === "error" ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" :
-                    "bg-brand-accent text-brand-bg hover:bg-brand-accent-hover"}
-                `}
-            >
-                {status === "saving" ? "Sincronizando..." : 
-                 status === "success" ? "Notas Actualizadas" :
-                 status === "error" ? "Inténtelo de nuevo" :
-                 "Guardar Notas"}
-            </button>
+            {!isTeacher && (
+              <button 
+                  onClick={saveComment}
+                  disabled={status === "saving" || !comment.trim() || comment === clase.notasAlumno}
+                  className={`
+                      w-full py-4 rounded-lg font-bold text-[9px] uppercase tracking-[0.3em] transition-all
+                      ${status === "success" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : 
+                      status === "error" ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" :
+                      "bg-brand-accent text-brand-bg hover:bg-brand-accent-hover"}
+                  `}
+              >
+                  {status === "saving" ? "Sincronizando..." : 
+                   status === "success" ? "Notas Actualizadas" :
+                   status === "error" ? "Inténtelo de nuevo" :
+                   "Guardar Notas"}
+              </button>
+            )}
         </div>
       </div>
     </motion.article>
